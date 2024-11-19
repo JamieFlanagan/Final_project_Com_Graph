@@ -20,7 +20,7 @@ static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
 
 // OpenGL camera view parameters
-static glm::vec3 eye_center;
+static glm::vec3 eye_center, cityCenter;
 static glm::vec3 lookat(0, 0, 0);
 static glm::vec3 up(0, 1, 0);
 
@@ -52,6 +52,130 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 
     return texture;
 }
+
+struct Road {
+    GLuint vertexArrayID, vertexBufferID, indexBufferID, uvBufferID, textureID, programID, colorBufferID;
+    GLuint mvpMatrixID, textureSamplerID, useTextureID;
+
+    glm::vec3 position;  // Position of the road
+    glm::vec2 size;      // Length and width of the road
+
+    // Road vertices (a simple rectangle)
+    GLfloat vertex_buffer_data[18] = {
+        -1.0f, 0.0f, 1.0f,  // Bottom-left
+        1.0f, 0.0f, 1.0f,   // Bottom-right
+        1.0f, 0.0f, -1.0f,  // Top-right
+
+        -1.0f, 0.0f, 1.0f,  // Bottom-left
+        1.0f, 0.0f, -1.0f,  // Top-right
+        -1.0f, 0.0f, -1.0f, // Top-left
+    };
+
+    GLfloat uv_buffer_data[12] = {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+    };
+
+	GLfloat color_buffer_data[18] = {
+		0.5f, 0.5f, 0.5f,  // Grey color
+		0.5f, 0.5f, 0.5f,  // Grey color
+		0.5f, 0.5f, 0.5f,  // Grey color
+
+		0.5f, 0.5f, 0.5f,  // Grey color
+		0.5f, 0.5f, 0.5f,  // Grey color
+		0.5f, 0.5f, 0.5f,  // Grey color
+	};
+
+	GLuint index_buffer_data[6] = { 0, 1, 2, 3,4,5 };
+
+    void initialize(glm::vec3 position, glm::vec2 size, GLuint textureID) {
+        this->position = position;
+        this->size = size;
+        this->textureID = textureID;
+
+        glGenVertexArrays(1, &vertexArrayID);
+        glBindVertexArray(vertexArrayID);
+
+        glGenBuffers(1, &vertexBufferID);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
+
+    	// Color buffer
+    	glGenBuffers(1, &colorBufferID);
+    	glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+    	glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
+
+
+        glGenBuffers(1, &uvBufferID);
+        glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
+
+        glGenBuffers(1, &indexBufferID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
+
+        programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
+        mvpMatrixID = glGetUniformLocation(programID, "MVP");
+        textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+    	useTextureID = glGetUniformLocation(programID, "useTexture");
+
+    }
+
+    void render(glm::mat4 cameraMatrix) {
+        glUseProgram(programID);
+
+        // Scale the road size based on its dimensions
+        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(size.x, 1.0f, size.y));
+        glm::mat4 mvp = cameraMatrix * modelMatrix;
+        glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glUniform1i(textureSamplerID, 0);
+    	glUniform1i(useTextureID, GL_FALSE);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    	glEnableVertexAttribArray(1);
+    	glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);  // Use grey color for road
+    	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+    	glDisableVertexAttribArray(2);
+    }
+	void cleanup() {
+    	// Delete the buffers associated with the road
+    	glDeleteBuffers(1, &vertexBufferID);  // Vertex buffer
+    	glDeleteBuffers(1, &uvBufferID);      // UV buffer
+    	glDeleteBuffers(1, &indexBufferID);   // Index buffer
+
+    	// Delete the vertex array object
+    	glDeleteVertexArrays(1, &vertexArrayID);
+
+    	// Delete the shader program if it was created
+    	glDeleteProgram(programID);
+    }
+
+
+};
+
+
 
 //Sphere
 struct Sphere {
@@ -539,7 +663,7 @@ int main(void)
 
 	int rows =7;
 	int cols = 7;
-	float spacing =50.0f;
+	float spacing =65.0f;
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -568,6 +692,28 @@ int main(void)
 	}
 
     // ---------------------------
+	//Roads
+	std::vector<Road> roads;
+	// Create roads between buildings (horizontal and vertical roads)
+	for (int i = 0; i < rows - 1; ++i) {
+		for (int j = 0; j < cols - 1; ++j) {
+			// Horizontal roads
+			Road road1;
+			glm::vec3 position1 = glm::vec3(i * spacing, 0, j * spacing + spacing / 2.0f);  // Between buildings
+			glm::vec2 size1 = glm::vec2(spacing, 10.0f);  // Road length and width
+			road1.initialize(position1, size1, roadTexture);
+			roads.push_back(road1);
+
+			// Vertical roads
+			Road road2;
+			glm::vec3 position2 = glm::vec3(i * spacing + spacing / 2.0f, 0, j * spacing);  // Between buildings
+			glm::vec2 size2 = glm::vec2(5.0f, spacing);  // Road length and width
+			road2.initialize(position2, size2, roadTexture);
+			roads.push_back(road2);
+		}
+	}
+
+	//----------------
 
 	Sphere sphere;
 	glm::vec3 spherePosition = glm::vec3(100.0f, 300.0f, 60.0f);  // Position in the air
@@ -578,6 +724,7 @@ int main(void)
     eye_center.y = viewDistance * cos(viewPolar);
     eye_center.x = viewDistance * cos(viewAzimuth);
     eye_center.z = viewDistance * sin(viewAzimuth);
+
 
 	glm::mat4 viewMatrix, projectionMatrix;
     glm::float32 FoV = 60.0f;
@@ -596,6 +743,10 @@ int main(void)
 			building.render(vp);
 		}
 
+		for (auto& road : roads) {
+			road.render(vp);
+		}
+
 		sphere.render(vp);
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -609,6 +760,9 @@ int main(void)
 
 	for (auto& building : buildings) {
 		building.cleanup();
+	}
+	for (auto& road : roads) {
+		road.cleanup();
 	}
 
 
