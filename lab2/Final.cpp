@@ -53,83 +53,156 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     return texture;
 }
 
-
-struct Road {
-    glm::vec3 position;
-    glm::vec3 scale;
-    GLuint vertexArrayID;
-    GLuint vertexBufferID;
-    GLuint uvBufferID;
+//Sphere
+struct Sphere {
+    GLuint vertexArrayID, vertexBufferID, indexBufferID, colorBufferID, uvBufferID, programID;
     GLuint textureID;
-    GLuint programID;
-    GLuint mvpMatrixID;
-    GLuint textureSamplerID;
+    GLuint mvpMatrixID, textureSamplerID, useTextureID;
+    std::vector<float> vertices, colors, uvs;
+    std::vector<unsigned int> indices;
 
-    GLfloat vertex_buffer_data[12] = {
-        -0.5f, 0.0f, -0.5f,
-         0.5f, 0.0f, -0.5f,
-         0.5f, 0.0f,  0.5f,
-        -0.5f, 0.0f,  0.5f
-    };
+	glm::vec3 position;  // Sphere position
 
-    GLuint index_buffer_data[6] = {
-        0, 1, 2,
-        0, 2, 3
-    };
+    void generateSphere(float radius, int sectorCount, int stackCount) {
+        float x, y, z, xy;                             // Vertex positions
+        float nx, ny, nz, lengthInv = 1.0f / radius;  // Normals
+        float s, t;                                   // UV coordinates
 
-    GLfloat uv_buffer_data[8] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 1.0f
-    };
+        float sectorStep = 2 * M_PI / sectorCount;
+        float stackStep = M_PI / stackCount;
+        float sectorAngle, stackAngle;
 
-    void initialize(glm::vec3 position, glm::vec3 scale, GLuint textureID) {
-        this->position = position;
-        this->scale = scale;
-        this->textureID = textureID;
+        // Generate vertices, normals, and UVs
+        for (int i = 0; i <= stackCount; ++i) {
+            stackAngle = M_PI / 2 - i * stackStep;        // From π/2 to -π/2
+            xy = radius * cosf(stackAngle);              // r * cos(u)
+            z = radius * sinf(stackAngle);               // r * sin(u)
 
+            // Add (sectorCount+1) vertices per stack
+            for (int j = 0; j <= sectorCount; ++j) {
+                sectorAngle = j * sectorStep;            // From 0 to 2π
+
+                // Vertex position
+                x = xy * cosf(sectorAngle);              // r * cos(u) * cos(v)
+                y = xy * sinf(sectorAngle);              // r * cos(u) * sin(v)
+                vertices.push_back(x);
+                vertices.push_back(y);
+                vertices.push_back(z);
+
+                // UV coordinates
+                s = (float)j / sectorCount;
+                t = (float)i / stackCount;
+                uvs.push_back(s);
+                uvs.push_back(t);
+
+                // Vertex colors (blue)
+                colors.push_back(0.0f);  // Red
+                colors.push_back(0.0f);  // Green
+                colors.push_back(1.0f);  // Blue
+            }
+        }
+
+        // Generate indices
+        for (int i = 0; i < stackCount; ++i) {
+            int k1 = i * (sectorCount + 1);     // Beginning of current stack
+            int k2 = k1 + sectorCount + 1;     // Beginning of next stack
+
+            for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+                // Two triangles per sector
+                if (i != 0) {
+                    indices.push_back(k1);
+                    indices.push_back(k2);
+                    indices.push_back(k1 + 1);
+                }
+                if (i != (stackCount - 1)) {
+                    indices.push_back(k1 + 1);
+                    indices.push_back(k2);
+                    indices.push_back(k2 + 1);
+                }
+            }
+        }
+    }
+
+    void initialize(glm::vec3 position,float radius, int sectorCount, int stackCount, GLuint textureID) {
+		this->position=position;
+    	this->textureID = textureID;
+
+        // Generate sphere geometry
+        generateSphere(radius, sectorCount, stackCount);
+
+        // Generate and bind VAO
         glGenVertexArrays(1, &vertexArrayID);
         glBindVertexArray(vertexArrayID);
 
+        // Vertex buffer
         glGenBuffers(1, &vertexBufferID);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
+        // Color buffer
+        glGenBuffers(1, &colorBufferID);
+        glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+        glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+
+        // UV buffer
         glGenBuffers(1, &uvBufferID);
         glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(float), uvs.data(), GL_STATIC_DRAW);
 
-        programID = LoadShadersFromFile("../lab2/road.vert", "../lab2/road.frag");
+        // Index buffer
+        glGenBuffers(1, &indexBufferID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        // Load and compile shaders
+        programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
         mvpMatrixID = glGetUniformLocation(programID, "MVP");
         textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+    	useTextureID = glGetUniformLocation(programID, "useTexture");
+
     }
 
     void render(glm::mat4 cameraMatrix) {
         glUseProgram(programID);
+
+        // Pass the MVP matrix
+    	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
+    	glm::mat4 mvp = cameraMatrix * modelMatrix;
+        glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+    	// Set 'useTexture' to false for the sphere
+    	glUniform1i(useTextureID, GL_FALSE);
+
+        // Enable vertex attributes
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glEnableVertexAttribArray(2);
         glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
-        modelMatrix = glm::scale(modelMatrix, scale);
-        glm::mat4 mvp = cameraMatrix * modelMatrix;
-        glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
-
+        // Bind the texture
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureID);
         glUniform1i(textureSamplerID, 0);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, index_buffer_data);
+        // Draw sphere using indices
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
+        // Disable attributes
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
     }
 };
+
+
 
 struct Building {
 	glm::vec3 position;		// Position of the box
@@ -286,7 +359,8 @@ struct Building {
 	// Shader variable IDs
 	GLuint mvpMatrixID;
 	GLuint textureSamplerID;
-	GLuint programID;
+	GLuint programID, useTextureID;
+
 
 	void initialize(glm::vec3 position, glm::vec3 scale, GLuint textureID) {
 		// Define scale of the building geometry
@@ -334,6 +408,7 @@ struct Building {
 
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(programID, "MVP");
+		useTextureID = glGetUniformLocation(programID, "useTexture");
 
         // TODO: Load a texture
         // Used earlier, changed to load in multiple textures
@@ -350,6 +425,16 @@ struct Building {
 	void render(glm::mat4 cameraMatrix) {
 		glUseProgram(programID);
 
+		// Set the MVP matrix
+		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
+		modelMatrix = glm::scale(modelMatrix, scale);
+		glm::mat4 mvp = cameraMatrix * modelMatrix;
+		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+		// Set 'useTexture' to true for buildings
+		glUniform1i(useTextureID, GL_TRUE);
+
+		// Enable vertex attributes
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -358,39 +443,25 @@ struct Building {
 		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
-
-		// TODO: Model transform
-		// -----------------------
-        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
-        // Scale the box along each axis to make it look like a building
-        modelMatrix = glm::scale(modelMatrix, scale);
-        // -----------------------
-
-		// Set model-view-projection matrix
-		glm::mat4 mvp = cameraMatrix * modelMatrix;
-		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
-
-		// TODO: Enable UV buffer and texture sampler
 		glEnableVertexAttribArray(2);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+		// Bind texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		glUniform1i(textureSamplerID, 0);
 
-		// Draw the box
-		glDrawElements(
-			GL_TRIANGLES,      // mode
-			36,    			   // number of indices
-			GL_UNSIGNED_INT,   // type
-			(void*)0           // element array buffer offset
-		);
+		// Draw the building
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
+		// Disable attributes
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
-        //glDisableVertexAttribArray(2);
+		glDisableVertexAttribArray(2);
 	}
+
 
 	void cleanup() {
 		glDeleteBuffers(1, &vertexBufferID);
@@ -445,6 +516,15 @@ int main(void)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
+	//Road texture
+	GLuint roadTexture = LoadTextureTileBox("../lab2/facade0.jpg");
+	if (roadTexture == 0)
+	{
+		std::cerr << "Failed to load road texture." << std::endl;
+		return -1;
+	}
+
+	//Building Textures
 	std::vector<GLuint> textures;
 	textures.push_back(LoadTextureTileBox("../lab2/facade0.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade1.jpg"));
@@ -456,6 +536,7 @@ int main(void)
 
 	// TODO: Create more buildings
     // ---------------------------
+
 	int rows =7;
 	int cols = 7;
 	float spacing =50.0f;
@@ -488,6 +569,11 @@ int main(void)
 
     // ---------------------------
 
+	Sphere sphere;
+	glm::vec3 spherePosition = glm::vec3(100.0f, 300.0f, 60.0f);  // Position in the air
+	float sphereRadius = 25.0f;                               // Sphere radius
+	sphere.initialize(spherePosition,sphereRadius, 36, 18, 0);
+
 	// Camera setup
     eye_center.y = viewDistance * cos(viewPolar);
     eye_center.x = viewDistance * cos(viewAzimuth);
@@ -506,14 +592,11 @@ int main(void)
 		viewMatrix = glm::lookAt(eye_center, lookat, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
-		// Render the building
-		//b.render(vp);
-
 		for (auto& building : buildings) {
 			building.render(vp);
 		}
 
-
+		sphere.render(vp);
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -521,8 +604,8 @@ int main(void)
 	} // Check if the ESC key was pressed or the window was closed
 	while (!glfwWindowShouldClose(window));
 
-	// Clean up
-	//b.cleanup();
+
+
 
 	for (auto& building : buildings) {
 		building.cleanup();

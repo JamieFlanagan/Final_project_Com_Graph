@@ -1,15 +1,17 @@
 #version 330 core
 
-// Input UV from the vertex shader
-in vec2 uv;
+in vec3 color;    // Vertex color passed from the vertex shader
+in vec2 uv;       // UV coordinates passed from the vertex shader
 
 uniform sampler2D textureSampler;
+uniform bool useTexture; // New uniform to toggle texture usage
 
-// Output final color
 out vec3 finalColor;
 
-void main()
-{
-    // Use only the texture color
-    finalColor = texture(textureSampler, uv).rgb;
+void main() {
+    if (useTexture) {
+        finalColor = texture(textureSampler, uv).rgb; // Use texture color
+    } else {
+        finalColor = color; // Use vertex color
+    }
 }
