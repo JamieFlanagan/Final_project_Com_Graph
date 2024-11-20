@@ -19,6 +19,8 @@ include_directories(
 add_executable(lab2_building
         lab2/Final.cpp
 	lab2/render/shader.cpp
+		lab2/components/skyBox.cpp
+		lab2/components/skyBox.h
 )
 target_link_libraries(lab2_building
 	${OPENGL_LIBRARY}

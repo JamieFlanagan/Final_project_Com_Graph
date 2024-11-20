@@ -16,6 +16,8 @@
 #include <random>
 #include <iostream>
 
+#include "components/skyBox.h"
+
 static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
 
@@ -650,13 +652,15 @@ int main(void)
 
 	//Building Textures
 	std::vector<GLuint> textures;
+	/*
 	textures.push_back(LoadTextureTileBox("../lab2/facade0.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade1.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade2.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade3.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade4.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade5.jpg"));
-
+	*/
+	textures.push_back(LoadTextureTileBox("../lab2/nightCity.jpg"));
 
 	// TODO: Create more buildings
     // ---------------------------
@@ -720,6 +724,11 @@ int main(void)
 	float sphereRadius = 25.0f;                               // Sphere radius
 	sphere.initialize(spherePosition,sphereRadius, 36, 18, 0);
 
+	glm::vec3 cityCenterSky = glm::vec3((rows - 1) * spacing / 2.0f, 0, (cols - 1) * spacing / 2.0f);
+	SkyBox skybox;
+	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/sky.png");
+
+
 	// Camera setup
     eye_center.y = viewDistance * cos(viewPolar);
     eye_center.x = viewDistance * cos(viewAzimuth);
@@ -727,9 +736,9 @@ int main(void)
 
 
 	glm::mat4 viewMatrix, projectionMatrix;
-    glm::float32 FoV = 60.0f;
+    glm::float32 FoV = 50.0f;
 	glm::float32 zNear = 0.1f;
-	glm::float32 zFar = 1000.0f;
+	glm::float32 zFar = 3000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
 	do
@@ -738,6 +747,10 @@ int main(void)
 
 		viewMatrix = glm::lookAt(eye_center, lookat, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
+
+		glDisable(GL_DEPTH_TEST);
+		skybox.render(vp);
+		glEnable(GL_DEPTH_TEST);
 
 		for (auto& building : buildings) {
 			building.render(vp);
@@ -765,7 +778,7 @@ int main(void)
 		road.cleanup();
 	}
 
-
+	skybox.cleanup();
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
