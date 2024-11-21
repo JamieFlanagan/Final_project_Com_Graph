@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #define _USE_MATH_DEFINES
+#include <algorithm>
 #include <math.h>
 #include <bits/random.h>
 #include <random>
@@ -18,18 +19,25 @@
 
 #include "components/skyBox.h"
 
+
+
 static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
 
 // OpenGL camera view parameters
-static glm::vec3 eye_center, cityCenter;
+static glm::vec3 eye_center(0.0f, 10.0f, 0.f);
 static glm::vec3 lookat(0, 0, 0);
 static glm::vec3 up(0, 1, 0);
+static glm:: vec3 forward;
+static glm::vec3 right;
 
 // View control
-static float viewAzimuth = 0.f;
+static float viewAzimuth = -90.0f; //was 0
 static float viewPolar = 0.f;
 static float viewDistance = 600.0f;
+static float movementSpeed = 2.5f;
+static float rotationSpeed = 3.0f;
+
 
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
@@ -55,126 +63,139 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     return texture;
 }
 
-struct Road {
-    GLuint vertexArrayID, vertexBufferID, indexBufferID, uvBufferID, textureID, programID, colorBufferID;
-    GLuint mvpMatrixID, textureSamplerID, useTextureID;
+//WILL MOVE THIS TO COMPONENTS ONCE IT IS WORKING :)
 
-    glm::vec3 position;  // Position of the road
-    glm::vec2 size;      // Length and width of the road
+struct Floor {
+    GLuint vertexArrayID, vertexBufferID, colorBufferID, indexBufferID, uvBufferID;
+    GLuint mvpMatrixID, programID, textureSamplerID, textureID, useTextureID;
 
-    // Road vertices (a simple rectangle)
-    GLfloat vertex_buffer_data[18] = {
-        -1.0f, 0.0f, 1.0f,  // Bottom-left
-        1.0f, 0.0f, 1.0f,   // Bottom-right
-        1.0f, 0.0f, -1.0f,  // Top-right
+    void initialize(glm::vec3 position, glm::vec3 scale, const char* texturePath) {
+        // Define the floor vertices
+        GLfloat vertex_buffer_data[] = {
+            -1.0f, 0.0f, -1.0f,  // Bottom-left
+             1.0f, 0.0f, -1.0f,  // Bottom-right
+             1.0f, 0.0f,  1.0f,  // Top-right
+            -1.0f, 0.0f,  1.0f   // Top-left
+        };
 
-        -1.0f, 0.0f, 1.0f,  // Bottom-left
-        1.0f, 0.0f, -1.0f,  // Top-right
-        -1.0f, 0.0f, -1.0f, // Top-left
-    };
+        // Define the floor indices
+        GLuint index_buffer_data[] = {
+            0, 1, 2,  // First triangle
+            0, 2, 3,   // Second triangle
+        	3,2,1,
+        	3,1,0
+        };
 
-    GLfloat uv_buffer_data[12] = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
+        // Define the floor color (gray)
+        GLfloat color_buffer_data[] = {
+            0.5f, 0.5f, 0.5f,  // Bottom-left
+            0.5f, 0.5f, 0.5f,  // Bottom-right
+            0.5f, 0.5f, 0.5f,  // Top-right
+            0.5f, 0.5f, 0.5f   // Top-left
+        };
 
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-    };
+    	// Define the floor UV coordinates
+    	GLfloat uv_buffer_data[] = {
+    		0.0f, 0.0f,  // Bottom-left
+			10.0f, 0.0f, // Bottom-right (10 tiles across)
+			10.0f, 10.0f, // Top-right (10 tiles up)
+			0.0f, 10.0f  // Top-left
+		};
 
-	GLfloat color_buffer_data[18] = {
-		0.5f, 0.5f, 0.5f,  // Grey color
-		0.5f, 0.5f, 0.5f,  // Grey color
-		0.5f, 0.5f, 0.5f,  // Grey color
-
-		0.5f, 0.5f, 0.5f,  // Grey color
-		0.5f, 0.5f, 0.5f,  // Grey color
-		0.5f, 0.5f, 0.5f,  // Grey color
-	};
-
-	GLuint index_buffer_data[6] = { 0, 1, 2, 3,4,5 };
-
-    void initialize(glm::vec3 position, glm::vec2 size, GLuint textureID) {
-        this->position = position;
-        this->size = size;
-        this->textureID = textureID;
-
+        // Create and bind the VAO
         glGenVertexArrays(1, &vertexArrayID);
         glBindVertexArray(vertexArrayID);
 
+        // Create the vertex buffer
         glGenBuffers(1, &vertexBufferID);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
 
-    	// Color buffer
-    	glGenBuffers(1, &colorBufferID);
-    	glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
-    	glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
+        // Create the color buffer
+        glGenBuffers(1, &colorBufferID);
+        glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
+
+    	// Create the UV buffer
+    	glGenBuffers(1, &uvBufferID);
+    	glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+    	glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
 
 
-        glGenBuffers(1, &uvBufferID);
-        glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
-
+        // Create the index buffer
         glGenBuffers(1, &indexBufferID);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
 
-        programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
-        mvpMatrixID = glGetUniformLocation(programID, "MVP");
-        textureSamplerID = glGetUniformLocation(programID, "textureSampler");
-    	useTextureID = glGetUniformLocation(programID, "useTexture");
+    	// Load the texture
+    	textureID = LoadTextureTileBox(texturePath);
+    	if (textureID == 0) {
+    		std::cerr << "Failed to load texture: " << texturePath << std::endl;
+    	}
 
+        // Load shaders
+        programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
+        if (programID == 0) {
+            std::cerr << "Failed to load shaders." << std::endl;
+        }
+
+        // Get the MVP matrix uniform location
+        mvpMatrixID = glGetUniformLocation(programID, "MVP");
+    	textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+    	useTextureID = glGetUniformLocation(programID, "useTexture");
     }
 
-    void render(glm::mat4 cameraMatrix) {
+    void render(glm::mat4 cameraMatrix, glm::vec3 position, glm::vec3 scale) {
         glUseProgram(programID);
 
-        // Scale the road size based on its dimensions
+        // Compute the MVP matrix
         glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(size.x, 1.0f, size.y));
+        modelMatrix = glm::scale(modelMatrix, scale);
         glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+        // Pass the MVP matrix to the shader
         glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glUniform1i(textureSamplerID, 0);
-    	glUniform1i(useTextureID, GL_FALSE);
-
+        // Bind and enable vertex attributes
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    	glEnableVertexAttribArray(1);
-    	glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);  // Use grey color for road
-    	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    	glEnableVertexAttribArray(2);
+    	glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+    	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+    	// Bind the texture
+    	glActiveTexture(GL_TEXTURE0);
+    	glBindTexture(GL_TEXTURE_2D, textureID);
+    	glUniform1i(textureSamplerID, 0);
+
+    	glUniform1i(useTextureID, GL_TRUE);
+
+
+        // Bind the index buffer and draw the floor
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 
+        // Disable vertex attributes
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
     	glDisableVertexAttribArray(2);
     }
-	void cleanup() {
-    	// Delete the buffers associated with the road
-    	glDeleteBuffers(1, &vertexBufferID);  // Vertex buffer
-    	glDeleteBuffers(1, &uvBufferID);      // UV buffer
-    	glDeleteBuffers(1, &indexBufferID);   // Index buffer
 
-    	// Delete the vertex array object
-    	glDeleteVertexArrays(1, &vertexArrayID);
-
-    	// Delete the shader program if it was created
-    	glDeleteProgram(programID);
+    void cleanup() {
+        glDeleteBuffers(1, &vertexBufferID);
+        glDeleteBuffers(1, &colorBufferID);
+    	glDeleteBuffers(1, &uvBufferID);
+        glDeleteBuffers(1, &indexBufferID);
+        glDeleteVertexArrays(1, &vertexArrayID);
+    	glDeleteTextures(1, &textureID);
+        glDeleteProgram(programID);
     }
-
-
 };
 
 
@@ -642,29 +663,24 @@ int main(void)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	//Road texture
-	GLuint roadTexture = LoadTextureTileBox("../lab2/facade0.jpg");
-	if (roadTexture == 0)
-	{
-		std::cerr << "Failed to load road texture." << std::endl;
-		return -1;
-	}
+
+
+	//The ground
+	Floor floor;
+	glm::vec3 floorPosition = glm::vec3(0.0f, 0.0f, 0.0f);  // Centered at origin
+	glm::vec3 floorScale = glm::vec3(700.0f, 1.0f, 700.0f); // Large flat surface
+	floor.initialize(floorPosition, floorScale, "../lab2/cityGround.jpg");
+
 
 	//Building Textures
 	std::vector<GLuint> textures;
 	/*
 	textures.push_back(LoadTextureTileBox("../lab2/facade0.jpg"));
 	textures.push_back(LoadTextureTileBox("../lab2/facade1.jpg"));
-	textures.push_back(LoadTextureTileBox("../lab2/facade2.jpg"));
-	textures.push_back(LoadTextureTileBox("../lab2/facade3.jpg"));
-	textures.push_back(LoadTextureTileBox("../lab2/facade4.jpg"));
-	textures.push_back(LoadTextureTileBox("../lab2/facade5.jpg"));
 	*/
 	textures.push_back(LoadTextureTileBox("../lab2/nightCity.jpg"));
 
-	// TODO: Create more buildings
-    // ---------------------------
-
+	//My buildings
 	int rows =7;
 	int cols = 7;
 	float spacing =65.0f;
@@ -695,48 +711,25 @@ int main(void)
 		}
 	}
 
-    // ---------------------------
-	//Roads
-	std::vector<Road> roads;
-	// Create roads between buildings (horizontal and vertical roads)
-	for (int i = 0; i < rows - 1; ++i) {
-		for (int j = 0; j < cols - 1; ++j) {
-			// Horizontal roads
-			Road road1;
-			glm::vec3 position1 = glm::vec3(i * spacing, 0, j * spacing + spacing / 2.0f);  // Between buildings
-			glm::vec2 size1 = glm::vec2(spacing, 10.0f);  // Road length and width
-			road1.initialize(position1, size1, roadTexture);
-			roads.push_back(road1);
 
-			// Vertical roads
-			Road road2;
-			glm::vec3 position2 = glm::vec3(i * spacing + spacing / 2.0f, 0, j * spacing);  // Between buildings
-			glm::vec2 size2 = glm::vec2(5.0f, spacing);  // Road length and width
-			road2.initialize(position2, size2, roadTexture);
-			roads.push_back(road2);
-		}
-	}
-
-	//----------------
-
+	//My Sphere ----------------
+	// TBE drones
 	Sphere sphere;
 	glm::vec3 spherePosition = glm::vec3(100.0f, 300.0f, 60.0f);  // Position in the air
 	float sphereRadius = 25.0f;                               // Sphere radius
 	sphere.initialize(spherePosition,sphereRadius, 36, 18, 0);
 
+	//SkyBox
 	glm::vec3 cityCenterSky = glm::vec3((rows - 1) * spacing / 2.0f, 0, (cols - 1) * spacing / 2.0f);
 	SkyBox skybox;
-	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/sky.png");
+	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/future_cubeMap_correct.png");
 
 
 	// Camera setup
-    eye_center.y = viewDistance * cos(viewPolar);
-    eye_center.x = viewDistance * cos(viewAzimuth);
-    eye_center.z = viewDistance * sin(viewAzimuth);
-
-
+	forward = glm::normalize(lookat - eye_center);
+	right = glm::normalize(glm::cross(forward, up));
 	glm::mat4 viewMatrix, projectionMatrix;
-    glm::float32 FoV = 50.0f;
+    glm::float32 FoV = 100.0f;
 	glm::float32 zNear = 0.1f;
 	glm::float32 zFar = 3000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
@@ -752,12 +745,11 @@ int main(void)
 		skybox.render(vp);
 		glEnable(GL_DEPTH_TEST);
 
+		floor.render(vp, floorPosition, floorScale);
+
+
 		for (auto& building : buildings) {
 			building.render(vp);
-		}
-
-		for (auto& road : roads) {
-			road.render(vp);
 		}
 
 		sphere.render(vp);
@@ -768,16 +760,11 @@ int main(void)
 	} // Check if the ESC key was pressed or the window was closed
 	while (!glfwWindowShouldClose(window));
 
-
-
-
 	for (auto& building : buildings) {
 		building.cleanup();
 	}
-	for (auto& road : roads) {
-		road.cleanup();
-	}
 
+	floor.cleanup();
 	skybox.cleanup();
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
@@ -786,44 +773,61 @@ int main(void)
 }
 
 // Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode)
-{
-	if (key == GLFW_KEY_R && action == GLFW_PRESS)
-	{
-		viewAzimuth = 0.f;
-		viewPolar = 0.f;
-		eye_center.y = viewDistance * cos(viewPolar);
-		eye_center.x = viewDistance * cos(viewAzimuth);
-		eye_center.z = viewDistance * sin(viewAzimuth);
-		std::cout << "Reset." << std::endl;
-	}
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode) {
+    // Reset the camera position and orientation
+    if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+        viewAzimuth = -90.0f;
+        viewPolar = 0.0f;
+        eye_center = glm::vec3(0.0f, 10.0f, 0.0f);
+        lookat = glm::vec3(0.0f, 0.0f, 0.0f);
+        std::cout << "Camera reset." << std::endl;
+    }
 
-	if (key == GLFW_KEY_UP && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewPolar -= 0.1f;
-		eye_center.y = viewDistance * cos(viewPolar);
-	}
+    // Movement controls
+    if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        eye_center += forward * movementSpeed;
+        lookat += forward * movementSpeed;
+    }
+    if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        eye_center -= forward * movementSpeed;
+        lookat -= forward * movementSpeed;
+    }
+    if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        eye_center -= right * movementSpeed;
+        lookat -= right * movementSpeed;
+    }
+    if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        eye_center += right * movementSpeed;
+        lookat += right * movementSpeed;
+    }
 
-	if (key == GLFW_KEY_DOWN && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewPolar += 0.1f;
-		eye_center.y = viewDistance * cos(viewPolar);
-	}
+    // Rotation controls
+    if (key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        viewPolar -= glm::radians(rotationSpeed);
+        if (viewPolar < -glm::radians(89.0f)) viewPolar = -glm::radians(89.0f); // Prevent looking too far up
+    }
+    if (key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        viewPolar += glm::radians(rotationSpeed);
+        if (viewPolar > glm::radians(89.0f)) viewPolar = glm::radians(89.0f); // Prevent looking too far down
+    }
+    if (key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        viewAzimuth -= glm::radians(rotationSpeed);
+    }
+    if (key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        viewAzimuth += glm::radians(rotationSpeed);
+    }
 
-	if (key == GLFW_KEY_LEFT && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewAzimuth -= 0.1f;
-		eye_center.x = viewDistance * cos(viewAzimuth);
-		eye_center.z = viewDistance * sin(viewAzimuth);
-	}
+    // Update lookat direction based on new azimuth and polar angles
+    lookat.x = eye_center.x + cos(viewPolar) * cos(viewAzimuth);
+    lookat.y = eye_center.y + sin(viewPolar);
+    lookat.z = eye_center.z + cos(viewPolar) * sin(viewAzimuth);
 
-	if (key == GLFW_KEY_RIGHT && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewAzimuth += 0.1f;
-		eye_center.x = viewDistance * cos(viewAzimuth);
-		eye_center.z = viewDistance * sin(viewAzimuth);
-	}
+    // Update forward and right vectors
+    forward = glm::normalize(lookat - eye_center);
+    right = glm::normalize(glm::cross(forward, up));
 
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
+    // Exit application
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    }
 }
