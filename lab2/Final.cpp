@@ -66,7 +66,7 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 //WILL MOVE THIS TO COMPONENTS ONCE IT IS WORKING :)
 
 struct Floor {
-    GLuint vertexArrayID, vertexBufferID, colorBufferID, indexBufferID, uvBufferID;
+    GLuint vertexArrayID, vertexBufferID, colorBufferID, indexBufferID, uvBufferID, normalBufferID;
     GLuint mvpMatrixID, programID, textureSamplerID, textureID, useTextureID;
 
     void initialize(glm::vec3 position, glm::vec3 scale, const char* texturePath) {
@@ -96,10 +96,18 @@ struct Floor {
 
     	// Define the floor UV coordinates
     	GLfloat uv_buffer_data[] = {
-    		0.0f, 0.0f,  // Bottom-left
-			10.0f, 0.0f, // Bottom-right (10 tiles across)
-			10.0f, 10.0f, // Top-right (10 tiles up)
-			0.0f, 10.0f  // Top-left
+    		0.0f, 0.0f,        // Bottom-left
+			10.0f, 0.0f,       // Bottom-right
+			10.0f, 10.0f,      // Top-right
+			0.0f, 10.0f        // Top-left
+		};
+
+    	//Norms for lighting, all point up!
+    	GLfloat normal_buffer_data[] = {
+    		0.0f, 1.0f, 0.0f,  // Bottom-left
+			0.0f, 1.0f, 0.0f,  // Bottom-right
+			0.0f, 1.0f, 0.0f,  // Top-right
+			0.0f, 1.0f, 0.0f   // Top-left
 		};
 
         // Create and bind the VAO
@@ -110,6 +118,12 @@ struct Floor {
         glGenBuffers(1, &vertexBufferID);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
+
+    	// Create the normal buffer
+    	glGenBuffers(1, &normalBufferID);
+    	glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+    	glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
+
 
         // Create the color buffer
         glGenBuffers(1, &colorBufferID);
@@ -145,7 +159,7 @@ struct Floor {
     	useTextureID = glGetUniformLocation(programID, "useTexture");
     }
 
-    void render(glm::mat4 cameraMatrix, glm::vec3 position, glm::vec3 scale) {
+    void render(glm::mat4 cameraMatrix, glm::vec3 position, glm::vec3 scale, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos) {
         glUseProgram(programID);
 
         // Compute the MVP matrix
@@ -155,6 +169,14 @@ struct Floor {
 
         // Pass the MVP matrix to the shader
         glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+    	//Pass model matrix for the transformation
+    	glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+
+    	// Pass the lighting uniforms
+    	glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
+    	glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
+    	glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
 
         // Bind and enable vertex attributes
         glEnableVertexAttribArray(0);
@@ -168,6 +190,11 @@ struct Floor {
     	glEnableVertexAttribArray(2);
     	glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
     	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    	glEnableVertexAttribArray(3);
+    	glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+    	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
 
     	// Bind the texture
     	glActiveTexture(GL_TEXTURE0);
@@ -185,6 +212,7 @@ struct Floor {
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
     	glDisableVertexAttribArray(2);
+    	glDisableVertexAttribArray(3);
     }
 
     void cleanup() {
@@ -192,6 +220,7 @@ struct Floor {
         glDeleteBuffers(1, &colorBufferID);
     	glDeleteBuffers(1, &uvBufferID);
         glDeleteBuffers(1, &indexBufferID);
+    	glDeleteBuffers(1, &normalBufferID);
         glDeleteVertexArrays(1, &vertexArrayID);
     	glDeleteTextures(1, &textureID);
         glDeleteProgram(programID);
@@ -494,6 +523,45 @@ struct Building {
 
 	};
 
+	//Normals for lighting
+	GLfloat normal_buffer_data[72] = {
+		// Front face
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+
+		// Back face
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+
+		// Left face
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+
+		// Right face
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		// Top face
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		// Bottom face
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+	};
+
 
 	// OpenGL buffers
 	GLuint vertexArrayID;
@@ -502,6 +570,7 @@ struct Building {
 	GLuint colorBufferID;
 	GLuint uvBufferID;
 	GLuint textureID;
+	GLuint normalBufferID;
 
 	// Shader variable IDs
 	GLuint mvpMatrixID;
@@ -541,6 +610,10 @@ struct Building {
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
 
+		glGenBuffers(1, &normalBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
+
 		// Create an index buffer object to store the index data that defines triangle faces
 		glGenBuffers(1, &indexBufferID);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
@@ -569,7 +642,7 @@ struct Building {
 		textureSamplerID = glGetUniformLocation(programID, "textureSampler");
 	}
 
-	void render(glm::mat4 cameraMatrix) {
+	void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos) {
 		glUseProgram(programID);
 
 		// Set the MVP matrix
@@ -577,6 +650,14 @@ struct Building {
 		modelMatrix = glm::scale(modelMatrix, scale);
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+		glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+		// Pass lighting uniforms
+		glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
+		glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
+
+		// Pass the view (camera) position
+		glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
 
 		// Set 'useTexture' to true for buildings
 		glUniform1i(useTextureID, GL_TRUE);
@@ -594,6 +675,10 @@ struct Building {
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+		glEnableVertexAttribArray(3);  // Assuming location 3 is for normals
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
 		// Bind texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
@@ -607,6 +692,7 @@ struct Building {
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
+		glDisableVertexAttribArray(3);
 	}
 
 
@@ -656,6 +742,7 @@ int main(void)
 		std::cerr << "Failed to initialize OpenGL context." << std::endl;
 		return -1;
 	}
+
 
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
@@ -724,6 +811,11 @@ int main(void)
 	SkyBox skybox;
 	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/future_cubeMap_correct.png");
 
+	glm::vec3 lightPos = cityCenterSky + glm::vec3(0.0f, 300.0f, 0.0f);
+
+	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);     // Green light
+	glm::vec3 viewPos = eye_center;              // Camera position
+
 
 	// Camera setup
 	forward = glm::normalize(lookat - eye_center);
@@ -745,11 +837,12 @@ int main(void)
 		skybox.render(vp);
 		glEnable(GL_DEPTH_TEST);
 
-		floor.render(vp, floorPosition, floorScale);
+		floor.render(vp, floorPosition, floorScale, lightPos, lightColor, eye_center);
+
 
 
 		for (auto& building : buildings) {
-			building.render(vp);
+			building.render(vp, lightPos, lightColor, eye_center);
 		}
 
 		sphere.render(vp);
@@ -759,6 +852,7 @@ int main(void)
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (!glfwWindowShouldClose(window));
+
 
 	for (auto& building : buildings) {
 		building.cleanup();

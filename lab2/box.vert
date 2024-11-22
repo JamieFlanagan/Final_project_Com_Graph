@@ -4,21 +4,27 @@
 layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec3 vertexColor;
 layout(location = 2) in vec2 vertexUV;
+layout(location = 3) in vec3 vertexNormal;
 
 // Output data, to be interpolated for each fragment
 out vec3 color;
 out vec2 uv;
+out vec3 FragPos; // Position of the vertex in world space
+out vec3 Normal;  // Normal for the vertex
 
-// Matrix for vertex transformation
-uniform mat4 MVP;
+// Matrices for transformation
+uniform mat4 MVP;      // Combined model-view-projection matrix
+uniform mat4 model;    // Model matrix
 
 void main() {
     // Transform vertex
-    gl_Position =  MVP * vec4(vertexPosition, 1);
+    gl_Position = MVP * vec4(vertexPosition, 1.0);
 
-    // Pass vertex color to the fragment shader
+    // Pass color and UV to the fragment shader
     color = vertexColor;
-
-    // TODO: Pass UV to the fragment shader
     uv = vertexUV;
+
+    // Pass fragment position and normal
+    FragPos = vec3(model * vec4(vertexPosition, 1.0)); // Convert to world space
+    Normal = mat3(transpose(inverse(model))) * vertexNormal; // Transform normal
 }
