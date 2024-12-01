@@ -63,6 +63,39 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     return texture;
 }
 
+
+//Shadow Map
+struct ShadowMap {
+	GLuint depthMapFBO;
+	GLuint depthMap;
+	const unsigned int SHADOW_WIDTH = 2048;
+	const unsigned int SHADOW_HEIGHT = 2048;
+
+	void initialize() {
+		// Create framebuffer
+		glGenFramebuffers(1, &depthMapFBO);
+
+		// Create depth texture
+		glGenTextures(1, &depthMap);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+			SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+		// Attach depth texture to framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+};
+
 //WILL MOVE THIS TO COMPONENTS ONCE IT IS WORKING :)
 struct Floor {
     GLuint vertexArrayID;
@@ -76,6 +109,9 @@ struct Floor {
     GLuint textureSamplerID;
     GLuint useTextureID;
 	GLuint normalBufferID;
+	GLuint shadowMapID;
+	GLuint lightSpaceMatrixID;
+	GLuint shadowMapSamplerID;
 
     GLfloat vertex_buffer_data[12] = {
         -800.0f, 0.0f, -800.0f,
@@ -96,6 +132,7 @@ struct Floor {
         0, 3, 2
     };
 
+	// all norms point up
 	GLfloat normal_buffer_data[12] = {
 		0.0f, 1.0f, 0.0f,
 		0.0f, 1.0f, 0.0f,
@@ -128,19 +165,22 @@ struct Floor {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
 
         programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
+    	shadowMapID = LoadShadersFromFile("../lab2/depth.vert", "../lab2/depth.frag");
         mvpMatrixID = glGetUniformLocation(programID, "MVP");
         textureSamplerID = glGetUniformLocation(programID, "textureSampler");
         useTextureID = glGetUniformLocation(programID, "useTexture");
+    	lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
+    	shadowMapSamplerID = glGetUniformLocation(programID, "shadowMap");
     }
 
-	void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos) {
+	void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix) {
     	glUseProgram(programID);
 
     	// Model matrix and MVP calculation
     	glm::mat4 modelMatrix = glm::mat4(1.0f);
     	glm::mat4 mvp = cameraMatrix * modelMatrix;
 
-    	// Pass matrices to shader
+    	// Uniforms
     	glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
     	glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
 
@@ -148,6 +188,15 @@ struct Floor {
     	glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
     	glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
     	glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
+
+		//Shadow map uniforms:
+    	glUniformMatrix4fv(glGetUniformLocation(programID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+    	//Bind my shadow map:
+    	glActiveTexture(GL_TEXTURE1);
+    	glBindTexture(GL_TEXTURE_2D, shadowMap);
+    	glUniform1i(glGetUniformLocation(programID, "shadowMap"), 1);
+
 
     	// Enable texture
     	glUniform1i(useTextureID, GL_TRUE);
@@ -182,6 +231,24 @@ struct Floor {
     	glDisableVertexAttribArray(3);
     }
 
+	void renderDepth(const glm::mat4& lightSpaceMatrix) {
+		glUseProgram(shadowMapID);
+
+    	glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+    	glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+    	glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+
+    	glEnableVertexAttribArray(0);
+    	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+    	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+    	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    	glDisableVertexAttribArray(0);
+    }
+
     void cleanup() {
         glDeleteBuffers(1, &vertexBufferID);
         glDeleteBuffers(1, &uvBufferID);
@@ -189,6 +256,7 @@ struct Floor {
         glDeleteBuffers(1, &indexBufferID);
         glDeleteVertexArrays(1, &vertexArrayID);
         glDeleteProgram(programID);
+    	glDeleteProgram(shadowMapID);
     }
 };
 
@@ -537,10 +605,15 @@ struct Building {
 	GLuint textureID;
 	GLuint normalBufferID;
 
+
 	// Shader variable IDs
 	GLuint mvpMatrixID;
 	GLuint textureSamplerID;
-	GLuint programID, useTextureID;
+	GLuint programID, useTextureID, shadowMapID;
+
+	//Shadows
+	GLuint lightSpaceMatrixID;
+	GLuint shadowMapSamplerID;
 
 
 	void initialize(glm::vec3 position, glm::vec3 scale, GLuint textureID) {
@@ -587,6 +660,11 @@ struct Building {
 			std::cerr << "Failed to load shaders." << std::endl;
 		}
 
+		//shadow shaders
+		shadowMapID = LoadShadersFromFile("../lab2/depth.vert", "../lab2/depth.frag");
+		lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
+		shadowMapSamplerID = glGetUniformLocation(programID, "shadowMap");
+
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(programID, "MVP");
 		useTextureID = glGetUniformLocation(programID, "useTexture");
@@ -599,24 +677,32 @@ struct Building {
 		textureSamplerID = glGetUniformLocation(programID, "textureSampler");
 	}
 
-	void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos) {
+	void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix) {
 		glUseProgram(programID);
 
 		// Set the MVP matrix
 		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
 		modelMatrix = glm::scale(modelMatrix, scale);
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
-		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
+		//Uniforms:
+		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
 		// Pass lighting uniforms
 		glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
 		glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
-
 		// Pass the view (camera) position
 		glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
 
-		// Set 'useTexture' to true for buildings
+		// Shadow Map uniforms
+		glUniformMatrix4fv(glGetUniformLocation(programID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+		//bind my shadow map:
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, shadowMap);
+		glUniform1i(glGetUniformLocation(programID, "shadowMap"), 1);
+
+		// Set useTexture to true for buildings
 		glUniform1i(useTextureID, GL_TRUE);
 
 		// Enable vertex attributes
@@ -652,6 +738,29 @@ struct Building {
 		glDisableVertexAttribArray(3);
 	}
 
+	void renderDepth(const glm::mat4& lightSpaceMatrix) {
+		glUseProgram(shadowMapID);
+
+		// Calculate model matrix
+		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
+		modelMatrix = glm::scale(modelMatrix, scale);
+
+		// Pass matrices to shader
+		glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+		glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+
+		// Bind vertex buffer and draw
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		// Draw using indices
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+		glDisableVertexAttribArray(0);
+	}
+
 
 	void cleanup() {
 		glDeleteBuffers(1, &vertexBufferID);
@@ -661,6 +770,7 @@ struct Building {
 		//glDeleteBuffers(1, &uvBufferID);
 		//glDeleteTextures(1, &textureID);
 		glDeleteProgram(programID);
+		glDeleteProgram(shadowMapID);
 	}
 };
 
@@ -768,7 +878,7 @@ int main(void)
 	SkyBox skybox;
 	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/future_cubeMap_correct.png");
 
-	glm::vec3 lightPos = cityCenterSky + glm::vec3(0.0f, 300.0f, 0.0f);
+	glm::vec3 lightPos = cityCenterSky + glm::vec3(200.0f, 400.0f, 200.0f);
 
 	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);     // Green light
 	glm::vec3 viewPos = eye_center;              // Camera position
@@ -783,9 +893,33 @@ int main(void)
 	glm::float32 zFar = 3000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
+	ShadowMap shadowMap;
+	shadowMap.initialize();
+
+	glm::mat4 lightProjection = glm::ortho(-800.0f, 800.0f, -800.0f, 800.0f, 1.0f, 1000.0f);
+	glm::mat4 lightView = glm::lookAt(lightPos, cityCenterSky, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+
 	do
 	{
+
+
+	// Shadow pass
+		glViewport(0, 0, shadowMap.SHADOW_WIDTH, shadowMap.SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_FRONT);
+		for (auto& building : buildings) {
+			building.renderDepth(lightSpaceMatrix);
+		}
+		floor.renderDepth(lightSpaceMatrix);
+		//Render normally
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, 1024, 768);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_BACK);
+
 
 		viewMatrix = glm::lookAt(eye_center, lookat, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
@@ -794,10 +928,10 @@ int main(void)
 		skybox.render(vp);
 		glEnable(GL_DEPTH_TEST);
 
-		floor.render(vp, lightPos, lightColor, eye_center);
+		floor.render(vp, lightPos, lightColor, eye_center, shadowMap.depthMap, lightSpaceMatrix);
 
 		for (auto& building : buildings) {
-			building.render(vp, lightPos, lightColor, eye_center);
+			building.render(vp, lightPos, lightColor, eye_center, shadowMap.depthMap, lightSpaceMatrix);
 		}
 
 		sphere.render(vp);
@@ -816,6 +950,10 @@ int main(void)
 	floor.cleanup();
 
 	skybox.cleanup();
+
+	//Clear the shadow resources
+	glDeleteFramebuffers(1, &shadowMap.depthMapFBO);
+	glDeleteTextures(1, &shadowMap.depthMap);
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
