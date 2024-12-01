@@ -64,165 +64,130 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 }
 
 //WILL MOVE THIS TO COMPONENTS ONCE IT IS WORKING :)
-
 struct Floor {
-    GLuint vertexArrayID, vertexBufferID, colorBufferID, indexBufferID, uvBufferID, normalBufferID;
-    GLuint mvpMatrixID, programID, textureSamplerID, textureID, useTextureID;
+    GLuint vertexArrayID;
+    GLuint vertexBufferID;
+    GLuint colorBufferID;
+    GLuint uvBufferID;
+    GLuint indexBufferID;
+    GLuint textureID;
+    GLuint programID;
+    GLuint mvpMatrixID;
+    GLuint textureSamplerID;
+    GLuint useTextureID;
+	GLuint normalBufferID;
 
-    void initialize(glm::vec3 position, glm::vec3 scale, const char* texturePath) {
-        // Define the floor vertices
-        GLfloat vertex_buffer_data[] = {
-            -1.0f, 0.0f, -1.0f,  // Bottom-left
-             1.0f, 0.0f, -1.0f,  // Bottom-right
-             1.0f, 0.0f,  1.0f,  // Top-right
-            -1.0f, 0.0f,  1.0f   // Top-left
-        };
+    GLfloat vertex_buffer_data[12] = {
+        -800.0f, 0.0f, -800.0f,
+        800.0f, 0.0f, -800.0f,
+        800.0f, 0.0f, 800.0f,
+        -800.0f, 0.0f, 800.0f
+    };
 
-        // Define the floor indices
-        GLuint index_buffer_data[] = {
-            0, 1, 2,  // First triangle
-            0, 2, 3,   // Second triangle
-        	3,2,1,
-        	3,1,0
-        };
+    GLfloat uv_buffer_data[8] = {
+        0.0f, 0.0f,
+        20.0f, 0.0f,
+        20.0f, 20.0f,
+        0.0f, 20.0f
+    };
 
-        // Define the floor color (gray)
-        GLfloat color_buffer_data[] = {
-            0.5f, 0.5f, 0.5f,  // Bottom-left
-            0.5f, 0.5f, 0.5f,  // Bottom-right
-            0.5f, 0.5f, 0.5f,  // Top-right
-            0.5f, 0.5f, 0.5f   // Top-left
-        };
+    GLuint index_buffer_data[6] = {
+        0, 2, 1,
+        0, 3, 2
+    };
 
-    	// Define the floor UV coordinates
-    	GLfloat uv_buffer_data[] = {
-    		0.0f, 0.0f,        // Bottom-left
-			10.0f, 0.0f,       // Bottom-right
-			10.0f, 10.0f,      // Top-right
-			0.0f, 10.0f        // Top-left
-		};
+	GLfloat normal_buffer_data[12] = {
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f
+	};
 
-    	//Norms for lighting, all point up!
-    	GLfloat normal_buffer_data[] = {
-    		0.0f, 1.0f, 0.0f,  // Bottom-left
-			0.0f, 1.0f, 0.0f,  // Bottom-right
-			0.0f, 1.0f, 0.0f,  // Top-right
-			0.0f, 1.0f, 0.0f   // Top-left
-		};
+    void initialize(GLuint floorTexture) {
+        textureID = floorTexture;
 
-        // Create and bind the VAO
+
         glGenVertexArrays(1, &vertexArrayID);
         glBindVertexArray(vertexArrayID);
 
-        // Create the vertex buffer
         glGenBuffers(1, &vertexBufferID);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
 
-    	// Create the normal buffer
+    	// Normal buffer
     	glGenBuffers(1, &normalBufferID);
     	glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
     	glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
 
+        glGenBuffers(1, &uvBufferID);
+        glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
 
-        // Create the color buffer
-        glGenBuffers(1, &colorBufferID);
-        glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
-
-    	// Create the UV buffer
-    	glGenBuffers(1, &uvBufferID);
-    	glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-    	glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
-
-
-        // Create the index buffer
         glGenBuffers(1, &indexBufferID);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
 
-    	// Load the texture
-    	textureID = LoadTextureTileBox(texturePath);
-    	if (textureID == 0) {
-    		std::cerr << "Failed to load texture: " << texturePath << std::endl;
-    	}
-
-        // Load shaders
         programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
-        if (programID == 0) {
-            std::cerr << "Failed to load shaders." << std::endl;
-        }
-
-        // Get the MVP matrix uniform location
         mvpMatrixID = glGetUniformLocation(programID, "MVP");
-    	textureSamplerID = glGetUniformLocation(programID, "textureSampler");
-    	useTextureID = glGetUniformLocation(programID, "useTexture");
+        textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+        useTextureID = glGetUniformLocation(programID, "useTexture");
     }
 
-    void render(glm::mat4 cameraMatrix, glm::vec3 position, glm::vec3 scale, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos) {
-        glUseProgram(programID);
+	void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos) {
+    	glUseProgram(programID);
 
-        // Compute the MVP matrix
-        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
-        modelMatrix = glm::scale(modelMatrix, scale);
-        glm::mat4 mvp = cameraMatrix * modelMatrix;
+    	// Model matrix and MVP calculation
+    	glm::mat4 modelMatrix = glm::mat4(1.0f);
+    	glm::mat4 mvp = cameraMatrix * modelMatrix;
 
-        // Pass the MVP matrix to the shader
-        glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
-
-    	//Pass model matrix for the transformation
+    	// Pass matrices to shader
+    	glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
     	glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
 
-    	// Pass the lighting uniforms
+    	// Pass lighting uniforms
     	glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
     	glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
     	glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
 
-        // Bind and enable vertex attributes
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    	// Enable texture
+    	glUniform1i(useTextureID, GL_TRUE);
 
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    	// Vertex position
+    	glEnableVertexAttribArray(0);
+    	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+    	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+    	// Normal data
+    	glEnableVertexAttribArray(3);
+    	glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+    	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    	// UV coordinates
     	glEnableVertexAttribArray(2);
     	glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
     	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-    	glEnableVertexAttribArray(3);
-    	glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
-    	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-
-    	// Bind the texture
+    	// Bind texture
     	glActiveTexture(GL_TEXTURE0);
     	glBindTexture(GL_TEXTURE_2D, textureID);
     	glUniform1i(textureSamplerID, 0);
 
-    	glUniform1i(useTextureID, GL_TRUE);
+    	// Draw floor
+    	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+    	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-
-        // Bind the index buffer and draw the floor
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
-        glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-
-        // Disable vertex attributes
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+    	// Cleanup
+    	glDisableVertexAttribArray(0);
     	glDisableVertexAttribArray(2);
     	glDisableVertexAttribArray(3);
     }
 
     void cleanup() {
         glDeleteBuffers(1, &vertexBufferID);
-        glDeleteBuffers(1, &colorBufferID);
-    	glDeleteBuffers(1, &uvBufferID);
-        glDeleteBuffers(1, &indexBufferID);
+        glDeleteBuffers(1, &uvBufferID);
     	glDeleteBuffers(1, &normalBufferID);
+        glDeleteBuffers(1, &indexBufferID);
         glDeleteVertexArrays(1, &vertexArrayID);
-    	glDeleteTextures(1, &textureID);
         glDeleteProgram(programID);
     }
 };
@@ -602,10 +567,6 @@ struct Building {
 		// Modify UV data to scale the V-coordinate for tiling
 		for (int i = 0; i < 24; ++i) uv_buffer_data[2 * i + 1] *= 5;
 
-		//Could you explain which texture coordinates are modified in the above for-loop? Why?
-		//The screenshot of the building is as follows.
-
-		// TODO: Create a vertex buffer object to store the UV data
 		glGenBuffers(1, &uvBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
@@ -635,10 +596,6 @@ struct Building {
         //
 		textureID = LoadTextureTileBox("../lab2/facade4.jpg");
 
-
-        // TODO: Get a handle to texture sampler
-        // -------------------------------------
-        // -------------------------------------
 		textureSamplerID = glGetUniformLocation(programID, "textureSampler");
 	}
 
@@ -754,9 +711,9 @@ int main(void)
 
 	//The ground
 	Floor floor;
-	glm::vec3 floorPosition = glm::vec3(0.0f, 0.0f, 0.0f);  // Centered at origin
-	glm::vec3 floorScale = glm::vec3(700.0f, 1.0f, 700.0f); // Large flat surface
-	floor.initialize(floorPosition, floorScale, "../lab2/cityGround.jpg");
+	GLuint floorTexture = LoadTextureTileBox("../lab2/cityGround.jpg");
+	floor.initialize(floorTexture);
+
 
 
 	//Building Textures
@@ -837,9 +794,7 @@ int main(void)
 		skybox.render(vp);
 		glEnable(GL_DEPTH_TEST);
 
-		floor.render(vp, floorPosition, floorScale, lightPos, lightColor, eye_center);
-
-
+		floor.render(vp, lightPos, lightColor, eye_center);
 
 		for (auto& building : buildings) {
 			building.render(vp, lightPos, lightColor, eye_center);
@@ -859,6 +814,7 @@ int main(void)
 	}
 
 	floor.cleanup();
+
 	skybox.cleanup();
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
