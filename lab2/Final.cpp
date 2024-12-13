@@ -17,10 +17,8 @@
 #include "components/drone.h"
 #include "components/floor.h"
 #include "components/Building.h"
-
-
+#include "components/animation_model.h"
 #include <tiny_gltf.h>
-
 
 static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
@@ -38,7 +36,6 @@ static float viewPolar = 0.f;
 static float viewDistance = 600.0f;
 static float movementSpeed = 2.5f;
 static float rotationSpeed = 3.0f;
-
 
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
@@ -63,7 +60,6 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 
     return texture;
 }
-
 
 //Shadow Map
 struct ShadowMap {
@@ -96,7 +92,6 @@ struct ShadowMap {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 };
-
 
 
 //Sphere
@@ -312,7 +307,6 @@ int main(void)
 		return -1;
 	}
 
-
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -323,14 +317,6 @@ int main(void)
 	GLuint floorTexture = LoadTextureTileBox("../lab2/cityGround.jpg");
 	floor.initialize(floorTexture);
 
-
-	//Building Textures
-	//std::vector<GLuint> textures;
-	/*
-	textures.push_back(LoadTextureTileBox("../lab2/facade0.jpg"));
-	textures.push_back(LoadTextureTileBox("../lab2/facade1.jpg"));
-	*/
-	//textures.push_back(LoadTextureTileBox("../lab2/nightCity.jpg"));
 	GLuint buildingTexture = LoadTextureTileBox("../lab2/nightCity.jpg");
 
 	//My buildings
@@ -369,16 +355,12 @@ int main(void)
 	GLuint guinessTexture = LoadTextureTileBox("../lab2/facade0.jpg");
 	drone.initialize(glm::vec3(100.0f, 300.0f, 60.0f), guinessTexture);
 
-
-
 	//My Sphere ----------------
 	// TBE drones
 	Sphere sphere;
 	glm::vec3 spherePosition = glm::vec3(100.0f, 300.0f, 60.0f);  // Position in the air
 	float sphereRadius = 25.0f;                               // Sphere radius
 	sphere.initialize(spherePosition,sphereRadius, 36, 18, 0);
-
-
 
 	//sphere movement
 	float lastFrame =0.0f;
@@ -389,11 +371,12 @@ int main(void)
 	SkyBox skybox;
 	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/sky.png");
 
-	glm::vec3 lightPos = cityCenterSky + glm::vec3(200.0f, 400.0f, 200.0f);
+	animationModel bot;
+	bot.initialize();
 
+	glm::vec3 lightPos = cityCenterSky + glm::vec3(200.0f, 400.0f, 200.0f);
 	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);     // Green light
 	glm::vec3 viewPos = eye_center;              // Camera position
-
 
 	// Camera setup
 	forward = glm::normalize(lookat - eye_center);
@@ -411,17 +394,16 @@ int main(void)
 	glm::mat4 lightView = glm::lookAt(lightPos, cityCenterSky, glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
+	float time = 0.0f;
 
 	do
 	{
-
 		//For sphere movement get delta time
-		currentFrame=glfwGetTime();
-		float deltaTime =currentFrame - lastFrame;
-		lastFrame=currentFrame;
-
+		float currentTime = glfwGetTime();
+		float deltaTime = currentTime - time;
+		time = currentTime;
 		//character update
-
+		bot.update(time);
 
 	// Shadow pass
 		glViewport(0, 0, shadowMap.SHADOW_WIDTH, shadowMap.SHADOW_HEIGHT);
@@ -433,14 +415,13 @@ int main(void)
 		}
 		floor.renderDepth(lightSpaceMatrix);
 
-
 		drone.updatePosition(deltaTime);
+
 		//Render normally
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, 1024, 768);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glCullFace(GL_BACK);
-
 
 		viewMatrix = glm::lookAt(eye_center, lookat, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
@@ -451,12 +432,11 @@ int main(void)
 
 		floor.render(vp, lightPos, lightColor, eye_center, shadowMap.depthMap, lightSpaceMatrix);
 
-
-
 		for (auto& building : buildings) {
 			building.render(vp, lightPos, lightColor, eye_center, shadowMap.depthMap, lightSpaceMatrix);
 		}
 
+		bot.render(vp);
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		drone.render(vp, lightPos, lightColor, eye_center, shadowMap.depthMap, lightSpaceMatrix);
@@ -477,7 +457,7 @@ int main(void)
 	floor.cleanup();
 
 	skybox.cleanup();
-
+	bot.cleanup();
 	//Clear the shadow resources
 	glDeleteFramebuffers(1, &shadowMap.depthMapFBO);
 	glDeleteTextures(1, &shadowMap.depthMap);

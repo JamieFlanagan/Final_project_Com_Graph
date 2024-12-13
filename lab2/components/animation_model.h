@@ -6,8 +6,11 @@
 #define ANIMATION_MODEL_H
 
 #include <glad/gl.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <tiny_gltf.h>
 
 #include <vector>
@@ -15,29 +18,28 @@
 #include <string>
 #include "render/shader.h"
 
-struct animationModel {
+class animationModel {
+public:
     GLuint mvpMatrixID;
     GLuint jointMatricesID;
     GLuint lightPositionID;
     GLuint lightIntensityID;
     GLuint programID;
-    glm::vec3 lightPosition;
+    glm::vec3 lightPosition;  // Position of the light source
     glm::vec3 lightIntensity;
 
-    tinygltf:: Model model;
+    tinygltf::Model model;
 
     struct PrimitiveObject {
         GLuint vao;
         std::map<int, GLuint> vbos;
     };
-    std::vector<PrimitiveObject> primitiveObjects;
 
     struct SkinObject {
         std::vector<glm::mat4> inverseBindMatrices;
         std::vector<glm::mat4> globalJointTransforms;
         std::vector<glm::mat4> jointMatrices;
     };
-    std::vector<SkinObject> skinObjects;
 
     struct SamplerObject {
         std::vector<float> input;
@@ -48,7 +50,7 @@ struct animationModel {
     struct AnimationObject {
         std::vector<SamplerObject> samplers;
     };
-    std::vector<AnimationObject> animationObjects;
+
 
     glm::mat4 getNodeTransform(const tinygltf::Node& node);
     void computeLocalNodeTransform(const tinygltf::Model& model, int nodeIndex, std::vector<glm::mat4>& localTransforms);
@@ -69,6 +71,13 @@ struct animationModel {
     void drawModel(const std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model);
     void render(glm::mat4 cameraMatrix);
     void cleanup();
+
+private:
+
+    std::vector<PrimitiveObject> primitiveObjects;
+    std::vector<SkinObject> skinObjects;
+    std::vector<AnimationObject> animationObjects;
+
 };
 
 #endif //ANIMATION_MODEL_H
