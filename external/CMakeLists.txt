@@ -19,6 +19,9 @@ include_directories(
 	glfw-3.1.2/include/GLFW/
 )
 
+
+
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(OPENGL_LIBRARY
 	${OPENGL_LIBRARY}

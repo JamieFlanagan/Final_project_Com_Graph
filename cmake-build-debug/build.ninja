@@ -52,21 +52,56 @@ build cmake_object_order_depends_target_lab2_building: phony || cmake_object_ord
 build CMakeFiles/lab2_building.dir/lab2/Final.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/Final.cpp || cmake_object_order_depends_target_lab2_building
   DEP_FILE = CMakeFiles\lab2_building.dir\lab2\Final.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
   OBJECT_DIR = CMakeFiles\lab2_building.dir
   OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2
 
 build CMakeFiles/lab2_building.dir/lab2/render/shader.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/render/shader.cpp || cmake_object_order_depends_target_lab2_building
   DEP_FILE = CMakeFiles\lab2_building.dir\lab2\render\shader.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
   OBJECT_DIR = CMakeFiles\lab2_building.dir
   OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\render
 
 build CMakeFiles/lab2_building.dir/lab2/components/skyBox.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/components/skyBox.cpp || cmake_object_order_depends_target_lab2_building
   DEP_FILE = CMakeFiles\lab2_building.dir\lab2\components\skyBox.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  OBJECT_DIR = CMakeFiles\lab2_building.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\components
+
+build CMakeFiles/lab2_building.dir/lab2/components/drone.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/components/drone.cpp || cmake_object_order_depends_target_lab2_building
+  DEP_FILE = CMakeFiles\lab2_building.dir\lab2\components\drone.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  OBJECT_DIR = CMakeFiles\lab2_building.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\components
+
+build CMakeFiles/lab2_building.dir/lab2/components/animation_model.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/components/animation_model.cpp || cmake_object_order_depends_target_lab2_building
+  DEP_FILE = CMakeFiles\lab2_building.dir\lab2\components\animation_model.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  OBJECT_DIR = CMakeFiles\lab2_building.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\components
+
+build CMakeFiles/lab2_building.dir/lab2/components/tinygltf_implementation.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/components/tinygltf_implementation.cpp || cmake_object_order_depends_target_lab2_building
+  DEP_FILE = CMakeFiles\lab2_building.dir\lab2\components\tinygltf_implementation.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  OBJECT_DIR = CMakeFiles\lab2_building.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\components
+
+build CMakeFiles/lab2_building.dir/lab2/components/floor.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/components/floor.cpp || cmake_object_order_depends_target_lab2_building
+  DEP_FILE = CMakeFiles\lab2_building.dir\lab2\components\floor.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
+  OBJECT_DIR = CMakeFiles\lab2_building.dir
+  OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\components
+
+build CMakeFiles/lab2_building.dir/lab2/components/Building.cpp.obj: CXX_COMPILER__lab2_building_unscanned_Debug C$:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2/components/Building.cpp || cmake_object_order_depends_target_lab2_building
+  DEP_FILE = CMakeFiles\lab2_building.dir\lab2\components\Building.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glfw-3.1.2/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glm-0.9.7.1 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-opengl-3.3/include -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/tinygltf-2.9.3 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/lab2 -IC:/Users/JAMIE/Documents/4thYear/ComputerGraphics/ForChecking/lab2/external/glad-3.3/include
   OBJECT_DIR = CMakeFiles\lab2_building.dir
   OBJECT_FILE_DIR = CMakeFiles\lab2_building.dir\lab2\components
 
@@ -78,7 +113,7 @@ build CMakeFiles/lab2_building.dir/lab2/components/skyBox.cpp.obj: CXX_COMPILER_
 #############################################
 # Link the executable lab2_building.exe
 
-build lab2_building.exe: CXX_EXECUTABLE_LINKER__lab2_building_Debug CMakeFiles/lab2_building.dir/lab2/Final.cpp.obj CMakeFiles/lab2_building.dir/lab2/render/shader.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/skyBox.cpp.obj | glfw3dll.a libglad.dll.a || glfw3.dll libglad.dll
+build lab2_building.exe: CXX_EXECUTABLE_LINKER__lab2_building_Debug CMakeFiles/lab2_building.dir/lab2/Final.cpp.obj CMakeFiles/lab2_building.dir/lab2/render/shader.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/skyBox.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/drone.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/animation_model.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/tinygltf_implementation.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/floor.cpp.obj CMakeFiles/lab2_building.dir/lab2/components/Building.cpp.obj | glfw3dll.a libglad.dll.a || glfw3.dll libglad.dll
   FLAGS = -g
   LINK_LIBRARIES = -lopengl32  -lglu32  glfw3dll.a  libglad.dll.a  -lopengl32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\lab2_building.dir

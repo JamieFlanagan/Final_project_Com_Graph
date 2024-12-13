@@ -9,9 +9,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 add_subdirectory(external)
 
 include_directories(
-	external/glfw-3.1.2/include/
-	external/glm-0.9.7.1/
-	external/glad-opengl-3.3/include/
+		external/glfw-3.1.2/include/
+		external/glm-0.9.7.1/
+		external/glad-opengl-3.3/include/
+		external/tinygltf-2.9.3/
 	external/
 	lab2/
 )
@@ -21,6 +22,15 @@ add_executable(lab2_building
 	lab2/render/shader.cpp
 		lab2/components/skyBox.cpp
 		lab2/components/skyBox.h
+		lab2/components/drone.h
+		lab2/components/drone.cpp
+		lab2/components/animation_model.cpp
+		lab2/components/animation_model.h
+		lab2/components/tinygltf_implementation.cpp
+		lab2/components/floor.cpp
+		lab2/components/floor.h
+		lab2/components/Building.cpp
+		lab2/components/Building.h
 )
 target_link_libraries(lab2_building
 	${OPENGL_LIBRARY}
