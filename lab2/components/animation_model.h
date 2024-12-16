@@ -24,9 +24,11 @@ public:
     GLuint jointMatricesID;
     GLuint lightPositionID;
     GLuint lightIntensityID;
+    GLuint textureID;
     GLuint programID;
     glm::vec3 lightPosition;  // Position of the light source
     glm::vec3 lightIntensity;
+    //glm::vec3 initialPosition;
 
     tinygltf::Model model;
 

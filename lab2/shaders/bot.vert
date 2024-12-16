@@ -3,16 +3,18 @@
 // Attributes
 layout(location = 0) in vec3 inPosition;   // Vertex position
 layout(location = 1) in vec3 inNormal;     // Vertex normal
+layout(location = 2) in vec2 inTexCoord; // Textures
 layout(location = 3) in uvec4 inJoints;    // Joint indices
 layout(location = 4) in vec4 inWeights;    // Joint weights
 
 // Uniforms
 uniform mat4 MVP;                  // Model-View-Projection matrix
-uniform mat4 jointMatrices[25];    // Array of joint matrices
+uniform mat4 jointMatrices[99];    // Array of joint matrices
 
 // Outputs to the fragment shader
 out vec3 worldPosition;
 out vec3 worldNormal;
+out vec2 fragTexCoord;
 
 void main() {
     // Skinning transformation
@@ -41,6 +43,7 @@ void main() {
     // Pass world data to the fragment shader
     worldPosition = vec3(skinnedPosition);
     worldNormal = normalize(skinnedNormal);
+    fragTexCoord = inTexCoord;
 
     // Transform
     gl_Position = MVP * skinnedPosition;

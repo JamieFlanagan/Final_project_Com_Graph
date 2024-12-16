@@ -8,6 +8,32 @@
 #include <render/shader.h>
 #define BUFFER_OFFSET(offset) ((char*)nullptr + (offset))
 #include <tiny_gltf.h>
+#include <stb/stb_image.h>
+
+static GLuint LoadTextureTileBox(const char *texture_file_path) {
+    int w, h, channels;
+    stbi_set_flip_vertically_on_load(false);
+    uint8_t* img = stbi_load(texture_file_path, &w, &h, &channels, 3);
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // To tile textures on a box, we set wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if (img) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        std::cout << "Failed to load texture " << texture_file_path << std::endl;
+    }
+    stbi_image_free(img);
+
+    return texture;
+}
 
 glm::mat4 animationModel::getNodeTransform(const tinygltf::Node& node) {
     glm::mat4 transform(1.0f);
@@ -51,11 +77,28 @@ void animationModel::computeGlobalNodeTransform(const tinygltf::Model& model,
         int nodeIndex, const glm::mat4& parentTransform,
         std::vector<glm::mat4> &globalTransforms)
 {
-    // ----------------------------------------
-    // TODO: your code here
-    globalTransforms[nodeIndex] = parentTransform * localTransforms[nodeIndex];
+
+    //For movement as the animation just stays in place
+    static glm::vec3 globalPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    glm::mat4 translation = glm::translate(glm::mat4(1.0f), globalPosition);
+
+    //To correct cesium man rendering on his side
+
+    glm::mat4 correction = glm::mat4(1.0f);
+    correction = glm::rotate(correction, glm::radians(90.0f), glm::vec3(0, 1, 0)); // Rotate 90° around X-axis
+    correction = glm::scale(correction, glm::vec3(15.0f));
+
+    glm::mat4 correctedParentTransform = (parentTransform == glm::mat4(1.0f))
+        ? translation * correction * parentTransform
+        : parentTransform;
+
+    globalTransforms[nodeIndex] = correctedParentTransform * localTransforms[nodeIndex];
 
     const tinygltf::Node& node = model.nodes[nodeIndex];
+    glm::vec3 position = glm::vec3(globalTransforms[nodeIndex][3]); // Extract translation
+    std::cout << "Node " << nodeIndex << " global position: "
+              << position.x << ", " << position.y << ", " << position.z << std::endl;
 
     // Recursively compute the global transforms for child nodes.
     for (int childIndex : node.children) {
@@ -100,10 +143,10 @@ std::vector<animationModel::SkinObject> animationModel::prepareSkinning(const ti
 			std::vector<glm::mat4> localTransforms(model.nodes.size(), glm::mat4(1.0f));
 			std::vector<glm::mat4> globalTransforms(model.nodes.size(), glm::mat4(1.0f));
 
-			///int root = skin.joints[0];
-			int root =24;
+			int root = skin.joints[0];
+
 			computeLocalNodeTransform(model, root, localTransforms);
-			computeGlobalNodeTransform(model, localTransforms, 24, glm::mat4(1.0f), globalTransforms);
+			computeGlobalNodeTransform(model, localTransforms, root, glm::mat4(1.0f), globalTransforms);
 
 			for (size_t j = 0; j < skin.joints.size(); j++) {
 				int jointIndex = skin.joints[j];
@@ -252,30 +295,30 @@ void animationModel::updateAnimation(
     }
 }
 
-void animationModel::updateSkinning(const tinygltf::Skin &skin,const std::vector<glm::mat4> &nodeTransforms) {
+void animationModel::updateSkinning(const tinygltf::Skin &skin,const std::vector<glm::mat4> &globalTransforms) {
 
     // -------------------------------------------------
     // TODO: Recompute joint matrices
-    for (SkinObject &skinObject : skinObjects) {
-        for (size_t i = 0; i < skinObject.jointMatrices.size(); i++) {
-            int jointIndex = skin.joints[i];
-            skinObject.jointMatrices[i] = nodeTransforms[jointIndex] * skinObject.inverseBindMatrices[i];
-        }
+    for (size_t i = 0; i < skin.joints.size(); ++i) {
+        int jointIndex = skin.joints[i];
+        skinObjects[0].jointMatrices[i] = globalTransforms[jointIndex] * skinObjects[0].inverseBindMatrices[i];
     }
     // -------------------------------------------------
 }
 
 void animationModel::update(float time) {
-
-    // -------------------------------------------------
-    // TODO: your code here
     if (model.animations.empty() || model.skins.empty()) {
         return;
     }
 
+
     // Animation and skin objects
     const tinygltf::Animation &animation = model.animations[0];
     const AnimationObject &animationObject = animationObjects[0];
+
+    float duration = animationObject.samplers[0].input.back();
+    float normalizedTime = fmod(time, duration);
+
     const tinygltf::Skin &skin = model.skins[0];
 
     // Initialize node transforms (identity for all nodes)
@@ -287,10 +330,26 @@ void animationModel::update(float time) {
     // Global transforms for all nodes
     std::vector<glm::mat4> globalTransforms(model.nodes.size(), glm::mat4(1.0f));
 
+    // Static variable to track continuous movement
+    static float totalMovement = 0.0f;
+    float movementSpeed = 0.1f; // Adjust this value to control movement speed
+    totalMovement -= movementSpeed; // Move backwards (negative z-axis)
+
+    // Create correction matrix
+    glm::mat4 correction = glm::mat4(1.0f);
+    correction = glm::rotate(correction, glm::radians(-90.0f), glm::vec3(1, 0, 0)); // Rotate 90° around X-axis
+    correction = glm::rotate(correction, glm::radians(-90.0f), glm::vec3(0, 0, 1)); // Rotate 90° around X-axis
+    correction = glm::scale(correction, glm::vec3(15.0f)); // Maintain original scale
+
+    // Create translation matrix
+    glm::mat4 movementTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -totalMovement));
+
+    // Combine movement with correction
+    glm::mat4 finalTransform = movementTransform * correction;
+
     // Compute global transforms starting from the root joint
     int rootNodeIndex = skin.joints[0];
-    glm::mat4 parentTransform = glm::mat4(1.0f); // Identity matrix for the root's parent
-    computeGlobalNodeTransform(model, nodeTransforms, rootNodeIndex, parentTransform, globalTransforms);
+    computeGlobalNodeTransform(model, nodeTransforms, rootNodeIndex, finalTransform, globalTransforms);
 
     // Update skinning joint matrices
     for (SkinObject &skinObject : skinObjects) {
@@ -326,7 +385,7 @@ bool animationModel::loadModel(tinygltf::Model &model, const char *filename) {
 void animationModel::initialize() {
     lightPosition = glm::vec3(-275.0f, 500.0f, 800.0f);
     lightIntensity = glm::vec3(5e6f, 5e6f, 5e6f);
-    if (!loadModel(model, "../lab2/models/bot.gltf")) return;
+    if (!loadModel(model, "../lab2/models/CesiumMan.gltf")) return;
     primitiveObjects = bindModel(model);
     skinObjects = prepareSkinning(model);
     animationObjects = prepareAnimation(model);
@@ -334,9 +393,15 @@ void animationModel::initialize() {
     programID = LoadShadersFromFile("../lab2/shaders/bot.vert", "../lab2/shaders/bot.frag");
     if (programID == 0) std::cerr << "Failed to load shaders." << std::endl;
 
+    textureID = LoadTextureTileBox("../lab2/models/CesiumMan_img0.jpg");
+
+
     mvpMatrixID = glGetUniformLocation(programID, "MVP");
     lightPositionID = glGetUniformLocation(programID, "lightPosition");
     lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
+    // Add this uniform location in initialize()
+    jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
+    //initialPosition = startPosition;
 }
 
 void animationModel::bindMesh(std::vector<PrimitiveObject> &primitiveObjects,
@@ -502,16 +567,21 @@ void animationModel::render(glm::mat4 cameraMatrix) {
     glm::mat4 mvp = cameraMatrix;
     glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-    // -----------------------------------------------------------------
-    // TODO: Set animation data for linear blend skinning in shader
-    // -----------------------------------------------------------------
-    glUniformMatrix4fv(jointMatricesID, static_cast<GLsizei>(skinObjects[0].jointMatrices.size()), GL_FALSE, glm::value_ptr(skinObjects[0].jointMatrices[0]));
+    if (!skinObjects.empty()) {
+        // Ensure we don't exceed the maximum number of joints in the shader
+        size_t numJoints = std::min(skinObjects[0].jointMatrices.size(), size_t(99));
+        glUniformMatrix4fv(jointMatricesID, static_cast<GLsizei>(numJoints), GL_FALSE,
+                           glm::value_ptr(skinObjects[0].jointMatrices[0]));
+    }
 
-    // -----------------------------------------------------------------
 
     // Set light data
     glUniform3fv(lightPositionID, 1, &lightPosition[0]);
     glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glUniform1i(glGetUniformLocation(programID, "textureSampler"), 0);
 
     // Draw the GLTF model
     drawModel(primitiveObjects, model);

@@ -331,6 +331,7 @@ int main(void)
 	//std::uniform_int_distribution<> texture_dist(0, textures.size() - 1);
 	std::vector<Building> buildings;
 
+
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
 			Building b;
