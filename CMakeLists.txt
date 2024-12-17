@@ -31,6 +31,8 @@ add_executable(lab2_building
 		lab2/components/floor.h
 		lab2/components/Building.cpp
 		lab2/components/Building.h
+		lab2/components/Billboard/Billboard.cpp
+		lab2/components/Billboard/Billboard.h
 )
 target_link_libraries(lab2_building
 	${OPENGL_LIBRARY}

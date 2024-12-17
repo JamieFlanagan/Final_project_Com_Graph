@@ -97,9 +97,10 @@ void animationModel::computeGlobalNodeTransform(const tinygltf::Model& model,
 
     const tinygltf::Node& node = model.nodes[nodeIndex];
     glm::vec3 position = glm::vec3(globalTransforms[nodeIndex][3]); // Extract translation
+    /*
     std::cout << "Node " << nodeIndex << " global position: "
               << position.x << ", " << position.y << ", " << position.z << std::endl;
-
+*/
     // Recursively compute the global transforms for child nodes.
     for (int childIndex : node.children) {
         computeGlobalNodeTransform(model, localTransforms, childIndex, globalTransforms[nodeIndex], globalTransforms);

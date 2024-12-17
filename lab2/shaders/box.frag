@@ -56,7 +56,10 @@ void main() {
 
     // Combine texture color with diffuse lighting
     vec3 textureColor = useTexture ? texture(textureSampler, uv).rgb : vec3(1.0);
+
+
     vec3 result = (ambient + (1.0 - shadow) * diffuse) * textureColor;
 
     finalColor = result;
+
 }
