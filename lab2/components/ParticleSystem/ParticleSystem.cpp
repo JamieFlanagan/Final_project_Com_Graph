@@ -9,8 +9,11 @@ ParticleSystem::ParticleSystem()
     : maxParticles(0), vao(0), vertexBuffer(0), programID(0), textureID(0) {}
 
 
-void ParticleSystem::initialize( int maxParticles) {
+void ParticleSystem::initialize( int maxParticles, int rows, int cols, float spacing) {
     this->maxParticles = maxParticles;
+    this->rows = rows;
+    this->cols = cols;
+    this->spacing = spacing;
 
     // Shader setup
     programID = LoadShadersFromFile("../lab2/shaders/ParticleShaders/particle.vert", "../lab2/shaders/ParticleShaders/particle.frag");
@@ -54,13 +57,25 @@ void ParticleSystem::initializeQuad() {
 }
 
 void ParticleSystem::respawnParticle(Particle& particle) {
+    float minX = 0.0f;
+    float maxX = rows * spacing;
+    float minZ = 0.0f;
+    float maxZ = cols * spacing;
     float heightOffset = 10.0f;
-    particle.position = glm::vec3(positionDist(generator), heightOffset, positionDist(generator));
-    particle.velocity = glm::vec3(velocityDist(generator), 5.0f, velocityDist(generator));
+    particle.position = glm::vec3(
+        std::uniform_real_distribution<float>(minX, maxX)(generator),
+        heightOffset,
+        std::uniform_real_distribution<float>(minZ, maxZ)(generator)
+    );
+    particle.velocity = glm::vec3(
+        velocityDist(generator),
+        5.0f,  // Upward velocity
+        velocityDist(generator)
+    );
     particle.lifetime = lifetimeDist(generator);
-    particle.alpha = 1.0f;
-
+    particle.alpha = 1.0f; // Initial alpha
 }
+
 
 void ParticleSystem::update(float deltaTime) {
     for (auto& particle : particles) {

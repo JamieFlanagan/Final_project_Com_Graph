@@ -35,6 +35,10 @@ add_executable(lab2_building
 		lab2/components/Billboard/Billboard.h
 		lab2/components/ParticleSystem/ParticleSystem.cpp
 		lab2/components/ParticleSystem/ParticleSystem.h
+		lab2/components/WelcomeSign/WelcomeSign.cpp
+		lab2/components/WelcomeSign/WelcomeSign.h
+		lab2/components/CoolerParticles/movingParticles.cpp
+		lab2/components/CoolerParticles/movingParticles.h
 )
 target_link_libraries(lab2_building
 	${OPENGL_LIBRARY}

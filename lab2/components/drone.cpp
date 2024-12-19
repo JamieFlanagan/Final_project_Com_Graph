@@ -41,7 +41,7 @@ void Drone::initialize(glm::vec3 startPosition, GLuint guinessTexture) {
     generateDroneBody();
     generateRotors();
 
-    programID = LoadShadersFromFile("../lab2/box.vert", "../lab2/box.frag");
+    programID = LoadShadersFromFile("../lab2/shaders/box.vert", "../lab2/shaders/box.frag");
     mvpMatrixID = glGetUniformLocation(programID, "MVP");
     textureSamplerID = glGetUniformLocation(programID, "textureSampler");
     useTextureID = glGetUniformLocation(programID, "useTexture");

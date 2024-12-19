@@ -22,7 +22,7 @@ struct Particle {
 class ParticleSystem {
 public:
     ParticleSystem();
-    void initialize(int maxParticles);
+    void initialize(int maxParticles , int rows, int cols, float spacing);
     void update(float deltaTime);
     void render(glm::mat4 lightSpaceMatrix);
     void cleanup();
@@ -34,6 +34,9 @@ private:
     std::vector<Particle> particles;
     std::vector<float> vertices; // Quad vertices
     int maxParticles;
+    int rows, cols;
+    float spacing;
+
 
     std::default_random_engine generator;
     std::uniform_real_distribution<float> positionDist;
