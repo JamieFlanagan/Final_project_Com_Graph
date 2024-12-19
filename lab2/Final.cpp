@@ -451,8 +451,12 @@ GL_STATIC_DRAW);
 };
 
 
-//Struct that is used to intro to the city, here I used a guiness.
-// Different way of making cube as it is a slender cube with a wider cube on top
+void wrapBuildingPositions(glm::vec3 cameraPosition, float gridSize, std::vector<Building>& buildings) {
+	for (auto& building : buildings) {
+		building.position.x = fmod(building.position.x - cameraPosition.x + gridSize, gridSize);
+		building.position.z = fmod(building.position.z - cameraPosition.z + gridSize, gridSize);
+	}
+}
 
 
 void initializeShadowMap() {
@@ -578,7 +582,9 @@ int main(void)
 	//SkyBox
 	glm::vec3 cityCenterSky = glm::vec3((rows - 1) * spacing / 2.0f, 0, (cols - 1) * spacing / 2.0f);
 	SkyBox skybox;
+	glm::vec3 skyboxScale(1000.0f, 1000.0f, 1000.0f);
 	skybox.initialize(cityCenterSky, glm::vec3(rows * spacing, rows * spacing, rows * spacing), "../lab2/sky.png");
+
 
 	animationModel bot;
 	bot.initialize();
@@ -617,7 +623,7 @@ int main(void)
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
 	float time = 0.0f;
-
+	wrapBuildingPositions(eye_center, spacing * rows, buildings);
 	do
 	{
 		//For sphere movement get delta time
@@ -628,6 +634,8 @@ int main(void)
 		bot.update(time);
 		particles.update(deltaTime);
 		//particleSystem.update(deltaTime);
+
+		//Infinite scene
 
 	// Shadow pass
 		glViewport(0, 0, shadow_width, shadow_height);
@@ -657,7 +665,7 @@ int main(void)
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
 		glDisable(GL_DEPTH_TEST);
-		skybox.render(vp);
+		skybox.render(viewMatrix,projectionMatrix );
 		glEnable(GL_DEPTH_TEST);
 
 		floor.render(vp, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);

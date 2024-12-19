@@ -213,13 +213,14 @@ void SkyBox::initialize(glm::vec3 position, glm::vec3 scale, const char* texture
 	textureID = LoadTextureTileBox(texturePath);
 }
 
-void SkyBox::render(const glm::mat4& cameraMatrix) {
+void SkyBox::render(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
 	glUseProgram(programID);
 
-	// Set the MVP matrix
-	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
-	modelMatrix = glm::scale(modelMatrix, scale);
-	glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+	glm::mat4 viewMatrixNoTranslation = glm::mat4(glm::mat3(viewMatrix)); // Keep rotation only
+
+	// Calculate MVP matrix
+	glm::mat4 mvp = projectionMatrix * viewMatrixNoTranslation * glm::scale(glm::mat4(1.0f), scale);
 	glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
 	// Bind and enable the vertex buffer
@@ -227,11 +228,6 @@ void SkyBox::render(const glm::mat4& cameraMatrix) {
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-	// Bind and enable the color buffer
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// Bind and enable the UV buffer
 	glEnableVertexAttribArray(2);
@@ -249,9 +245,9 @@ void SkyBox::render(const glm::mat4& cameraMatrix) {
 
 	// Disable attributes
 	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
 }
+
 
 void SkyBox::cleanup() {
 	glDeleteBuffers(1, &vertexBufferID);

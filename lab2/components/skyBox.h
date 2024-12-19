@@ -24,7 +24,7 @@ struct SkyBox {
 
     // Functions
     void initialize(glm::vec3 position, glm::vec3 scale, const char* texturePath);
-    void render(const glm::mat4& cameraMatrix);
+    void render(const glm::mat4& cameraMatrix, const glm::mat4& projectionMatrix);
     void cleanup();
 };
 
