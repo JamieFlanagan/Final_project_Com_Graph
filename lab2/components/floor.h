@@ -28,13 +28,10 @@ public:
     GLuint normalBufferID;
     GLuint shadowMapID;
     GLuint lightSpaceMatrixID;
-    GLuint shadowMapSamplerID;
-
-
 
     void initialize(GLuint floorTexture);
-    void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix);
-    void renderDepth(const glm::mat4& lightSpaceMatrix);
+    void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix, GLuint depthMap);
+    void renderDepth(GLuint depthShaderProg, glm::mat4 lightSpaceMatrix);
     void cleanup();
 
 };

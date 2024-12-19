@@ -2,9 +2,10 @@
 // Created by JAMIE on 13/12/2024.
 //
 
+
 #ifndef BUILDING_H
 #define BUILDING_H
-
+/*
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,20 +20,22 @@ public:
     GLuint colorBufferID;
     GLuint uvBufferID;
     GLuint textureID;
+    GLuint lightSpaceMatrixID;
+    GLuint modelMatrixID;
     GLuint normalBufferID;
     GLuint mvpMatrixID;
     GLuint textureSamplerID;
-    GLuint programID, useTextureID, shadowMapID;
-    GLuint lightSpaceMatrixID;
-    GLuint shadowMapSamplerID;
+    GLuint programID, useTextureID;
+    GLuint shadowMapID;
 
     void initialize(glm::vec3 position, glm::vec3 scale, GLuint textureID);
     void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix);
-    void renderDepth(const glm::mat4& lightSpaceMatrix);
+    void renderDepth(const glm::mat4& lightSpaceMatrix, GLuint depthShaderProg);
     void cleanup();
 
 };
 
 
-
+*/
 #endif //BUILDING_H
+

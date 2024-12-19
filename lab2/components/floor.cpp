@@ -2,7 +2,7 @@
 // Created by JAMIE on 13/12/2024.
 //
 
-#include "components/floor.h"
+#include "floor.h"
 #include <render/shader.h>
 #include <stb/stb_image.h>
 #include <glm/glm.hpp>
@@ -83,15 +83,14 @@ void Floor::initialize(GLuint floorTexture) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
 
     programID = LoadShadersFromFile("../lab2/shaders/box.vert", "../lab2/shaders/box.frag");
-    shadowMapID = LoadShadersFromFile("../lab2/shaders/depth.vert", "../lab2/shaders/depth.frag");
     mvpMatrixID = glGetUniformLocation(programID, "MVP");
     textureSamplerID = glGetUniformLocation(programID, "textureSampler");
     useTextureID = glGetUniformLocation(programID, "useTexture");
     lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
-    shadowMapSamplerID = glGetUniformLocation(programID, "shadowMap");
+    shadowMapID = glGetUniformLocation(programID, "shadowMap");
 }
 
-void Floor::render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix) {
+void Floor::render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix,GLuint depthMap) {
     glUseProgram(programID);
 
     glm::mat4 modelMatrix = glm::mat4(1.0f);
@@ -103,12 +102,11 @@ void Floor::render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightCo
     glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
     glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
     glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
-
-    glUniformMatrix4fv(glGetUniformLocation(programID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+    glUniformMatrix4fv(lightSpaceMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, shadowMap);
-    glUniform1i(glGetUniformLocation(programID, "shadowMap"), 1);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glUniform1i(shadowMapID, 1);
 
     glUniform1i(useTextureID, GL_TRUE);
 
@@ -136,22 +134,28 @@ void Floor::render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightCo
     glDisableVertexAttribArray(3);
 }
 
-void Floor::renderDepth(const glm::mat4& lightSpaceMatrix) {
-    glUseProgram(shadowMapID);
+void Floor:: renderDepth(GLuint depthShaderProg, glm::mat4 lightSpaceMatrix) {
+    glUseProgram(depthShaderProg);
 
     glm::mat4 modelMatrix = glm::mat4(1.0f);
+    glUniformMatrix4fv(glGetUniformLocation(depthShaderProg, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(depthShaderProg, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
 
-    glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+    glBindVertexArray(vertexArrayID);
 
-    glEnableVertexAttribArray(0);
+    // Enable and bind vertex attributes
+    glEnableVertexAttribArray(0); // Position attribute
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+    // Draw the floor
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+    // Disable vertex attributes
     glDisableVertexAttribArray(0);
+
 }
 
 void Floor::cleanup() {
@@ -161,5 +165,4 @@ void Floor::cleanup() {
     glDeleteBuffers(1, &indexBufferID);
     glDeleteVertexArrays(1, &vertexArrayID);
     glDeleteProgram(programID);
-    glDeleteProgram(shadowMapID);
 }

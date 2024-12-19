@@ -1,7 +1,7 @@
 //
 // Created by JAMIE on 13/12/2024.
 //
-
+/*
 #include "components/Building.h"
 #include <render/shader.h>
 #include <stb/stb_image.h>
@@ -260,17 +260,14 @@ void Building::initialize(glm::vec3 position, glm::vec3 scale, GLuint textureID)
         std::cerr << "Failed to load shaders." << std::endl;
     }
 
-    // Shadow shaders
-    shadowMapID = LoadShadersFromFile("../lab2/shaders/depth.vert", "../lab2/shaders/depth.frag");
-    lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
-    shadowMapSamplerID = glGetUniformLocation(programID, "shadowMap");
-
     // Get a handle for our "MVP" uniform
     mvpMatrixID = glGetUniformLocation(programID, "MVP");
     useTextureID = glGetUniformLocation(programID, "useTexture");
-
     // Use the passed-in texture
     textureSamplerID = glGetUniformLocation(programID, "textureSampler");
+	modelMatrixID = glGetUniformLocation(programID, "model");
+	lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
+	shadowMapID = glGetUniformLocation(programID, "shadowMap");
 }
 
 void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix) {
@@ -280,6 +277,22 @@ void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lig
 		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
 		modelMatrix = glm::scale(modelMatrix, scale);
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(2);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(3);  // Assuming location 3 is for normals
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 		//Uniforms:
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
@@ -301,22 +314,6 @@ void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lig
 		// Set useTexture to true for buildings
 		glUniform1i(useTextureID, GL_TRUE);
 
-		// Enable vertex attributes
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-		glEnableVertexAttribArray(2);
-		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-		glEnableVertexAttribArray(3);  // Assuming location 3 is for normals
-		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 		// Bind texture
 		glActiveTexture(GL_TEXTURE0);
@@ -334,18 +331,20 @@ void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lig
 		glDisableVertexAttribArray(3);
 	}
 
-void Building::renderDepth(const glm::mat4& lightSpaceMatrix) {
-	glUseProgram(shadowMapID);
+void Building::renderDepth(const glm::mat4& lightSpaceMatrix, GLuint depthShaderProg) {
+	glUseProgram(depthShaderProg);
+
+	glUniformMatrix4fv(glGetUniformLocation(depthShaderProg, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 
 	// Calculate model matrix
 	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
 	modelMatrix = glm::scale(modelMatrix, scale);
 
 	// Pass matrices to shader
-	glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(shadowMapID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(depthShaderProg, "modelMatrix"), 1, GL_FALSE, &modelMatrix[0][0]);
 
 	// Bind vertex buffer and draw
+	glBindVertexArray(vertexArrayID);
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -365,6 +364,6 @@ void Building::cleanup() {
 	//glDeleteBuffers(1, &uvBufferID);
 	//glDeleteTextures(1, &textureID);
 	glDeleteProgram(programID);
-	glDeleteProgram(shadowMapID);
 }
+*/
 
