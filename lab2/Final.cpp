@@ -487,6 +487,8 @@ struct HoverCar{
 	GLuint mvpMatrixID;
 	GLuint colorID;
 
+	//My hoverCar data
+
 	GLfloat vertex_buffer_data[72] = {
         // Front face (tapered)
         -0.8f, -0.3f,  1.0f,  // Narrower front
@@ -740,6 +742,7 @@ int main(void)
 		std::cerr << "Failed to initialize OpenGL context." << std::endl;
 		return -1;
 	}
+	glEnable(GL_PROGRAM_POINT_SIZE);
 
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
