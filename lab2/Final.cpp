@@ -480,54 +480,58 @@ struct HoverCar{
 	GLuint vertexBufferID;
 	GLuint normalBufferID;
 	GLuint indexBufferID;
+	GLuint uvBufferID;
+	GLuint textureID;
+	GLuint textureSamplerID;
 	GLuint programID;
 	GLuint mvpMatrixID;
 	GLuint colorID;
 
-	GLfloat vertex_buffer_data[72] = { // Vertex positions
-        // Front face
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
+	GLfloat vertex_buffer_data[72] = {
+        // Front face (tapered)
+        -0.8f, -0.3f,  1.0f,  // Narrower front
+         0.8f, -0.3f,  1.0f,
+         0.6f,  0.2f,  0.8f,  // Sloped windshield
+        -0.6f,  0.2f,  0.8f,
 
-        // Back face
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+        // Back face (wider)
+        -1.0f, -0.3f, -1.0f,
+         1.0f, -0.3f, -1.0f,
+         0.8f,  0.1f, -1.0f,
+        -0.8f,  0.1f, -1.0f,
 
         // Left face
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
+        -1.0f, -0.3f, -1.0f,
+        -0.8f, -0.3f,  1.0f,
+        -0.6f,  0.2f,  0.8f,
+        -0.8f,  0.1f, -1.0f,
 
         // Right face
-         1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
+         0.8f, -0.3f,  1.0f,
+         1.0f, -0.3f, -1.0f,
+         0.8f,  0.1f, -1.0f,
+         0.6f,  0.2f,  0.8f,
 
-        // Top face
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+        // Top face (cockpit)
+        -0.6f,  0.2f,  0.8f,
+         0.6f,  0.2f,  0.8f,
+         0.8f,  0.1f, -1.0f,
+        -0.8f,  0.1f, -1.0f,
 
-        // Bottom face
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f
+        // Bottom face (slightly curved up at edges)
+        -1.0f, -0.3f, -1.0f,
+         1.0f, -0.3f, -1.0f,
+         0.8f, -0.3f,  1.0f,
+        -0.8f, -0.3f,  1.0f
     };
 
-    GLfloat normal_buffer_data[72] = { // Normals for each face
+    // Updated normals for the modified shape
+    GLfloat normal_buffer_data[72] = {
         // Front face
-         0.0f,  0.0f,  1.0f,
-         0.0f,  0.0f,  1.0f,
-         0.0f,  0.0f,  1.0f,
-         0.0f,  0.0f,  1.0f,
+         0.0f,  0.2f,  1.0f,
+         0.0f,  0.2f,  1.0f,
+         0.0f,  0.2f,  1.0f,
+         0.0f,  0.2f,  1.0f,
 
         // Back face
          0.0f,  0.0f, -1.0f,
@@ -536,22 +540,22 @@ struct HoverCar{
          0.0f,  0.0f, -1.0f,
 
         // Left face
-        -1.0f,  0.0f,  0.0f,
-        -1.0f,  0.0f,  0.0f,
-        -1.0f,  0.0f,  0.0f,
-        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.1f,  0.0f,
+        -1.0f,  0.1f,  0.0f,
+        -1.0f,  0.1f,  0.0f,
+        -1.0f,  0.1f,  0.0f,
 
         // Right face
-         1.0f,  0.0f,  0.0f,
-         1.0f,  0.0f,  0.0f,
-         1.0f,  0.0f,  0.0f,
-         1.0f,  0.0f,  0.0f,
+         1.0f,  0.1f,  0.0f,
+         1.0f,  0.1f,  0.0f,
+         1.0f,  0.1f,  0.0f,
+         1.0f,  0.1f,  0.0f,
 
         // Top face
-         0.0f,  1.0f,  0.0f,
-         0.0f,  1.0f,  0.0f,
-         0.0f,  1.0f,  0.0f,
-         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.1f,
+         0.0f,  1.0f,  0.1f,
+         0.0f,  1.0f,  0.1f,
+         0.0f,  1.0f,  0.1f,
 
         // Bottom face
          0.0f, -1.0f,  0.0f,
@@ -560,19 +564,61 @@ struct HoverCar{
          0.0f, -1.0f,  0.0f
     };
 
-    GLuint index_buffer_data[36] = { // Index data for rendering
-        0, 1, 2, 0, 2, 3,   // Front face
-        4, 5, 6, 4, 6, 7,   // Back face
-        8, 9, 10, 8, 10, 11, // Left face
+    // Index buffer remains the same
+    GLuint index_buffer_data[36] = {
+        0, 1, 2, 0, 2, 3,     // Front face
+        4, 5, 6, 4, 6, 7,     // Back face
+        8, 9, 10, 8, 10, 11,  // Left face
         12, 13, 14, 12, 14, 15, // Right face
         16, 17, 18, 16, 18, 19, // Top face
         20, 21, 22, 20, 22, 23  // Bottom face
     };
 
-	void initialize(glm::vec3 initialPosition, glm::vec3 initialScale, glm::vec3 carColor) {
+
+	//UV
+	GLfloat uvBufferData[48] = {
+		// Front face
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		// Back face
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		// Left face
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		// Right face
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		// Top face
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		// Bottom face
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f
+	};
+
+	void initialize(glm::vec3 initialPosition, glm::vec3 initialScale, glm::vec3 carColor, GLuint TextureId) {
 		position = initialPosition;
 		scale = initialScale;
 		color = carColor;
+		this->textureID = TextureId;
 
 		glGenVertexArrays(1, &vertexArrayID);
 		glBindVertexArray(vertexArrayID);
@@ -589,6 +635,12 @@ struct HoverCar{
 		glEnableVertexAttribArray(1); // Normals
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		glGenBuffers(1, &uvBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(uvBufferData), uvBufferData, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
 		glGenBuffers(1, &indexBufferID);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
@@ -597,6 +649,7 @@ struct HoverCar{
 		programID = LoadShadersFromFile("../lab2/shaders/HoverCar/car.vert", "../lab2/shaders/HoverCar/car.frag");
 		mvpMatrixID = glGetUniformLocation(programID, "MVP");
 		colorID = glGetUniformLocation(programID, "carColor");
+		textureSamplerID = glGetUniformLocation(programID, "textureSampler");
 	}
 
 	void render(glm::mat4 vpMatrix) {
@@ -609,6 +662,11 @@ struct HoverCar{
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 		glUniform3fv(colorID, 1, &color[0]);
 
+		//Texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glUniform1i(textureSamplerID, 0);
+
 		glBindVertexArray(vertexArrayID);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	}
@@ -617,6 +675,9 @@ struct HoverCar{
 		glDeleteBuffers(1, &vertexBufferID);
 		glDeleteBuffers(1, &indexBufferID);
 		glDeleteVertexArrays(1, &vertexArrayID);
+		glDeleteBuffers(1, &normalBufferID);
+		glDeleteTextures(1, &textureID);
+		glDeleteBuffers(1, &uvBufferID);
 		glDeleteProgram(programID);
 	}
 };
@@ -741,6 +802,7 @@ int main(void)
 
 
 
+	GLuint carTexture = LoadTextureTileBox("../lab2/hoverCar2.jpg");
 	//Hover car
 	float tallestBuildingHeight=350.0f;
 	std::vector<HoverCar> hoverCars;
@@ -749,7 +811,7 @@ int main(void)
 		glm::vec3 carPosition = glm::vec3(-100.0f + i * 50.0f, 350.0f, -200.0f);
 		glm::vec3 carScale = glm::vec3(10.0f, 5.0f, 20.0f);
 		glm::vec3 carColor = glm::vec3(0.0f, 1.0f, 0.0f); // Green
-		car.initialize(carPosition, carScale, carColor);
+		car.initialize(carPosition, carScale, carColor, carTexture);
 		hoverCars.push_back(car);
 	}
 

@@ -1,8 +1,10 @@
 #version 330 core
+in vec2 fragUV;
+
 out vec4 fragColor;
 
-uniform vec3 carColor;
+uniform sampler2D textureSampler;
 
 void main() {
-    fragColor = vec4(carColor, 1.0);
+    fragColor = texture(textureSampler, fragUV); // Use only the texture color
 }
