@@ -471,7 +471,178 @@ void initializeShadowMap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-//Sphere
+struct HoverCar{
+	glm::vec3 position; // Position of the car
+	glm::vec3 scale;    // Scale of the car
+	glm::vec3 color;    // Color of the car
+
+	GLuint vertexArrayID;
+	GLuint vertexBufferID;
+	GLuint normalBufferID;
+	GLuint indexBufferID;
+	GLuint programID;
+	GLuint mvpMatrixID;
+	GLuint colorID;
+
+	GLfloat vertex_buffer_data[72] = { // Vertex positions
+        // Front face
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+
+        // Back face
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        // Left face
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        // Right face
+         1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+
+        // Top face
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        // Bottom face
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f
+    };
+
+    GLfloat normal_buffer_data[72] = { // Normals for each face
+        // Front face
+         0.0f,  0.0f,  1.0f,
+         0.0f,  0.0f,  1.0f,
+         0.0f,  0.0f,  1.0f,
+         0.0f,  0.0f,  1.0f,
+
+        // Back face
+         0.0f,  0.0f, -1.0f,
+         0.0f,  0.0f, -1.0f,
+         0.0f,  0.0f, -1.0f,
+         0.0f,  0.0f, -1.0f,
+
+        // Left face
+        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.0f,  0.0f,
+
+        // Right face
+         1.0f,  0.0f,  0.0f,
+         1.0f,  0.0f,  0.0f,
+         1.0f,  0.0f,  0.0f,
+         1.0f,  0.0f,  0.0f,
+
+        // Top face
+         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.0f,
+
+        // Bottom face
+         0.0f, -1.0f,  0.0f,
+         0.0f, -1.0f,  0.0f,
+         0.0f, -1.0f,  0.0f,
+         0.0f, -1.0f,  0.0f
+    };
+
+    GLuint index_buffer_data[36] = { // Index data for rendering
+        0, 1, 2, 0, 2, 3,   // Front face
+        4, 5, 6, 4, 6, 7,   // Back face
+        8, 9, 10, 8, 10, 11, // Left face
+        12, 13, 14, 12, 14, 15, // Right face
+        16, 17, 18, 16, 18, 19, // Top face
+        20, 21, 22, 20, 22, 23  // Bottom face
+    };
+
+	void initialize(glm::vec3 initialPosition, glm::vec3 initialScale, glm::vec3 carColor) {
+		position = initialPosition;
+		scale = initialScale;
+		color = carColor;
+
+		glGenVertexArrays(1, &vertexArrayID);
+		glBindVertexArray(vertexArrayID);
+
+		glGenBuffers(1, &vertexBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0); // Position
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glGenBuffers(1, &normalBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(1); // Normals
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glGenBuffers(1, &indexBufferID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
+
+		// Load shaders
+		programID = LoadShadersFromFile("../lab2/shaders/HoverCar/car.vert", "../lab2/shaders/HoverCar/car.frag");
+		mvpMatrixID = glGetUniformLocation(programID, "MVP");
+		colorID = glGetUniformLocation(programID, "carColor");
+	}
+
+	void render(glm::mat4 vpMatrix) {
+		glUseProgram(programID);
+
+		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
+		modelMatrix = glm::scale(modelMatrix, scale);
+		glm::mat4 mvp = vpMatrix * modelMatrix;
+
+		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+		glUniform3fv(colorID, 1, &color[0]);
+
+		glBindVertexArray(vertexArrayID);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	}
+
+	void cleanup() {
+		glDeleteBuffers(1, &vertexBufferID);
+		glDeleteBuffers(1, &indexBufferID);
+		glDeleteVertexArrays(1, &vertexArrayID);
+		glDeleteProgram(programID);
+	}
+};
+
+//Make the cubes move
+//Make the cubes move
+void updateHoverCars(std::vector<HoverCar>& hoverCars, float deltaTime, float tallestBuildingHeight) {
+
+	//Base variables so they dont overlap
+	float baseRadius = 100.0f; // The start radius
+	float radiusIncrement= 75.0f; // Incremenet for each car
+	float speedChange= 0.5f; // vary the speed of cars
+
+	for (size_t i = 0; i < hoverCars.size(); ++i) {
+		// Create motion along the y-axis
+		hoverCars[i].position.y = tallestBuildingHeight + 20.0f + 5.0f * sin(glfwGetTime() + i);
+
+		float radius = baseRadius + i * radiusIncrement; // Increase radius for each car
+		float speed = speedChange * (1.0f + i * 0.2f); // Slightly vary speed for each car
+		float phaseShift = i * glm::radians(45.0f);
+
+		// Move cars in a circular path around the city center
+		hoverCars[i].position.x = radius * cos(glfwGetTime() * speed+ phaseShift);
+		hoverCars[i].position.z = radius * sin(glfwGetTime() * speed + phaseShift);
+	}
+}
 
 int main(void)
 {
@@ -523,8 +694,6 @@ int main(void)
 	Floor floor;
 	GLuint floorTexture = LoadTextureTileBox("../lab2/cityGround.jpg");
 	floor.initialize(floorTexture);
-
-
 	float floorSize = 800.0f;
 
 	//My buildings
@@ -565,13 +734,24 @@ int main(void)
 		}
 	}
 
-
-
-
 	//Drone creation stemming from sphere Idea
 	Drone drone;
 	GLuint guinessTexture = LoadTextureTileBox("../lab2/guinessAddFix.jpg");
 	drone.initialize(glm::vec3(100.0f, 300.0f, 60.0f), guinessTexture);
+
+
+
+	//Hover car
+	float tallestBuildingHeight=350.0f;
+	std::vector<HoverCar> hoverCars;
+	for (int i = 0; i < 5; ++i) {
+		HoverCar car;
+		glm::vec3 carPosition = glm::vec3(-100.0f + i * 50.0f, 350.0f, -200.0f);
+		glm::vec3 carScale = glm::vec3(10.0f, 5.0f, 20.0f);
+		glm::vec3 carColor = glm::vec3(0.0f, 1.0f, 0.0f); // Green
+		car.initialize(carPosition, carScale, carColor);
+		hoverCars.push_back(car);
+	}
 
 	//My Sphere ----------------
 	// TBE drones
@@ -636,9 +816,11 @@ int main(void)
 		float currentTime = glfwGetTime();
 		float deltaTime = currentTime - time;
 		time = currentTime;
+
 		//character update
 		bot.update(time);
 		particles.update(deltaTime);
+		updateHoverCars(hoverCars, deltaTime, tallestBuildingHeight);
 		//particleSystem.update(deltaTime);
 
 		//Infinite scene
@@ -674,22 +856,21 @@ int main(void)
 		glDisable(GL_DEPTH_TEST);
 		skybox.render(viewMatrix,projectionMatrix );
 		glEnable(GL_DEPTH_TEST);
-
 		floor.render(vp, eye_center, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
-
-
 		for (auto& building : buildings) {
 			building.render(vp, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
 		}
-
 		bot.render(vp);
-
 		//Have this in to debug the cylinder drone but it doesnt work
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		drone.render(vp, lightPos, lightColor, eye_center, depthMap, lightSpaceMatrix);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 		sign.render(vp);
+		glDisable(GL_CULL_FACE);
+		for (auto& car : hoverCars) {
+			car.render(vp);
+		}
+		glEnable(GL_CULL_FACE);
 		//disable cull face so that the particles are always shown to the camera
 		glDisable(GL_CULL_FACE);
 		particles.render(vp);
@@ -719,6 +900,9 @@ int main(void)
 	//Clean up structs
 	for (auto& building : buildings) {
 		building.cleanup();
+	}
+	for (auto& car : hoverCars) {
+		car.cleanup();
 	}
 	floor.cleanup();
 	sign.cleanup();
