@@ -530,13 +530,6 @@ int main(void)
 	int cols = 7;
 	float spacing = 65;
 	GLuint buildingTexture = LoadTextureTileBox("../lab2/nightCity.jpg");
-
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> height_dist(30.0f, 150.0f);
-	std::uniform_real_distribution<> offset_dist(-5.0f, 5.0f);
-	//std::uniform_int_distribution<> texture_dist(0, textures.size() - 1);
-
 	float x=0;
 	float z=0;
 	std::vector<Building> buildings;
@@ -556,7 +549,8 @@ int main(void)
 			glm::vec3 scale = glm::vec3(16.0f, height, 16.0f);
 
 			// Adjust position.y to account for the height
-			position.y = height / 2.0f;
+			position.y = height;
+			position.y = height;
 
 			b.initialize(position, scale, buildingTexture);
 			buildings.push_back(b);
@@ -602,12 +596,12 @@ int main(void)
 
 	//Welcome Sign
 	WelcomeSign sign;
-	glm::vec3 signPosition = glm::vec3(0.0f, 0.0f, -200.0f);
+	glm::vec3 signPosition = glm::vec3(56.4475f, 0.0f, -295.218f);
 	sign.initialize(signPosition, guinessTexture);
 
 	//Particle System:
 	ParticleSystem particles;
-	particles.initialize(2000, rows, cols, spacing);
+	particles.initialize(3000, rows, cols, spacing);
 
 	//Other particles
 
@@ -688,14 +682,20 @@ int main(void)
 
 		bot.render(vp);
 
+		//Have this in to debug the cylinder drone but it doesnt work
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		drone.render(vp, lightPos, lightColor, eye_center, depthMap, lightSpaceMatrix);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		sign.render(vp);
+		//disable cull face so that the particles are always shown to the camera
+		glDisable(GL_CULL_FACE);
 		particles.render(vp);
+		glEnable(GL_CULL_FACE);
 		//particleSystem.render(vp);
 
+
+		/* Debug the camera posititon so I can exactly choose where I want certain elements
 		static float printTimer = 0.0f;
 		printTimer += deltaTime;
 		if (printTimer > 0.5f) {
@@ -706,7 +706,7 @@ int main(void)
 					  << std::endl;
 			printTimer = 0.0f;
 		}
-
+*/
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -714,12 +714,10 @@ int main(void)
 	} // Check if the ESC key was pressed or the window was closed
 	while (!glfwWindowShouldClose(window));
 
-
+	//Clean up structs
 	for (auto& building : buildings) {
 		building.cleanup();
 	}
-
-
 	floor.cleanup();
 	sign.cleanup();
 	skybox.cleanup();

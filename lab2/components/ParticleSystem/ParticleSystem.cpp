@@ -2,6 +2,7 @@
 
 #include "ParticleSystem.h"
 
+#include <iostream>
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -9,11 +10,20 @@ ParticleSystem::ParticleSystem()
     : maxParticles(0), vao(0), vertexBuffer(0), programID(0), textureID(0) {}
 
 
+//Create the particiles within the bounds of my new city layout
 void ParticleSystem::initialize( int maxParticles, int rows, int cols, float spacing) {
     this->maxParticles = maxParticles;
     this->rows = rows;
     this->cols = cols;
     this->spacing = spacing;
+
+    float offsetX = -((cols - 1) * spacing) / 2.0f;
+    float offsetZ = -((rows - 1) * spacing) / 2.0f;
+
+    minX = offsetX;
+    maxX = offsetX + (cols - 1) * spacing;
+    minZ = offsetZ;
+    maxZ = offsetZ + (rows - 1) * spacing;
 
     // Shader setup
     programID = LoadShadersFromFile("../lab2/shaders/ParticleShaders/particle.vert", "../lab2/shaders/ParticleShaders/particle.frag");
@@ -57,25 +67,27 @@ void ParticleSystem::initializeQuad() {
 }
 
 void ParticleSystem::respawnParticle(Particle& particle) {
-    float minX = 0.0f;
-    float maxX = rows * spacing;
-    float minZ = 0.0f;
-    float maxZ = cols * spacing;
-    float heightOffset = 10.0f;
+    float minHeight = 0.0f;  // Ground level
+    float maxHeight = 25.0f; // Max height above buildings
+
+    // Randomly position particles within the city bounds and height range
     particle.position = glm::vec3(
-        std::uniform_real_distribution<float>(minX, maxX)(generator),
-        heightOffset,
-        std::uniform_real_distribution<float>(minZ, maxZ)(generator)
+        std::uniform_real_distribution<float>(minX, maxX)(generator), // Random X within grid
+        std::uniform_real_distribution<float>(minHeight, maxHeight)(generator), // Random height
+        std::uniform_real_distribution<float>(minZ, maxZ)(generator)  // Random Z within grid
     );
+
+    // Add a small velocity for movement (optional)
     particle.velocity = glm::vec3(
         velocityDist(generator),
-        5.0f,  // Upward velocity
+        0.0f,  // Keep particles at constant height
         velocityDist(generator)
     );
-    particle.lifetime = lifetimeDist(generator);
-    particle.alpha = 1.0f; // Initial alpha
-}
 
+    // Randomize lifetime and set initial alpha
+    particle.lifetime = lifetimeDist(generator);
+    particle.alpha = 1.0f; // Fully opaque initially
+}
 
 void ParticleSystem::update(float deltaTime) {
     for (auto& particle : particles) {

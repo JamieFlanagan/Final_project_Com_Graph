@@ -36,6 +36,7 @@ private:
     int maxParticles;
     int rows, cols;
     float spacing;
+    float minX, maxX, minZ, maxZ;
 
 
     std::default_random_engine generator;
