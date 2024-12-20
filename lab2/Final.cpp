@@ -33,6 +33,8 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 
 // OpenGL camera view parameters
 static glm::vec3 eye_center(-0.73395, 10.0f, -341.383f);
+//Debug eye center for spawning very high in the scene
+//static glm::vec3 eye_center(29.2804, 952.36, -344.483);
 static glm::vec3 lookat(0, 0, 0);
 static glm::vec3 up(0, 1, 0);
 static glm:: vec3 forward;
@@ -53,7 +55,7 @@ bool saveDepthMap =false;
 
 
 //Lighting
-glm::vec3 lightPosition(500.0f, 500.0f, 0.0f);
+glm::vec3 lightPosition(100.0f, 800.0f, 0.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);       // White light
 glm::vec3 viewPosition;
 static glm::vec3 lightLookAt(0.0f, 0.0f, 0.0f);
@@ -624,7 +626,7 @@ int main(void)
 	glm::mat4 viewMatrix, projectionMatrix;
     glm::float32 FoV = 100.0f;
 	glm::float32 zNear = 0.1f;
-	glm::float32 zFar = 3000.0f;
+	glm::float32 zFar = 2000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
 	float time = 0.0f;
@@ -673,7 +675,7 @@ int main(void)
 		skybox.render(viewMatrix,projectionMatrix );
 		glEnable(GL_DEPTH_TEST);
 
-		floor.render(vp, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
+		floor.render(vp, eye_center, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
 
 
 		for (auto& building : buildings) {
@@ -695,7 +697,7 @@ int main(void)
 		//particleSystem.render(vp);
 
 
-		/* Debug the camera posititon so I can exactly choose where I want certain elements
+		//Debug the camera posititon so I can exactly choose where I want certain elements
 		static float printTimer = 0.0f;
 		printTimer += deltaTime;
 		if (printTimer > 0.5f) {
@@ -706,7 +708,7 @@ int main(void)
 					  << std::endl;
 			printTimer = 0.0f;
 		}
-*/
+
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();

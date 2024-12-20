@@ -13,10 +13,18 @@ out vec2 UV;
 uniform mat4 MVP;
 uniform mat4 model;
 uniform mat4 lightSpaceMatrix;
+uniform float tileScale;       // Scale for texture tiling
+uniform vec3 cameraPosition;
 
 void main() {
     gl_Position = MVP * vec4(vertexPosition, 1.0);
-    UV = vertexUV;
+
+    vec3 worldPos = vec3(model * vec4(vertexPosition, 1.0));
+
+    // Adjust UV coordinates for infinite tiling
+    UV = worldPos.xz * tileScale;
+
+    // Pass data to the fragment shader
     FragPos = vec3(model * vec4(vertexPosition, 1.0));
     Normal = mat3(transpose(inverse(model))) * vertexNormal;
     FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);

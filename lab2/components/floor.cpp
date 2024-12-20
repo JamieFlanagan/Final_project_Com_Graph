@@ -35,10 +35,10 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 }
 
 GLfloat vertex_buffer_data[12] = {
-    -400.0f, 0.0f, -400.0f,
-    400.0f, 0.0f, -400.0f,
-    400.0f, 0.0f, 400.0f,
-    -400.0f, 0.0f, 400.0f
+    -800.0f, 0.0f, -800.0f,
+    800.0f, 0.0f, -800.0f,
+    800.0f, 0.0f, 800.0f,
+    -800.0f, 0.0f, 800.0f
 };
 
 GLfloat uv_buffer_data[8] = {
@@ -90,49 +90,68 @@ void Floor::initialize(GLuint floorTexture) {
     shadowMapID = glGetUniformLocation(programID, "shadowMap");
 }
 
-void Floor::render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix,GLuint depthMap) {
+void Floor::render(glm::mat4 cameraMatrix, glm::vec3 cameraPosition, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix, GLuint depthMap) {
     glUseProgram(programID);
 
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
-    glm::mat4 mvp = cameraMatrix * modelMatrix;
+    glm::mat4 modelMatrix;
+    glm::mat4 mvp;
+    float tileSize = 800.0f;
 
-    glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+    // Determine the range of tiles to draw based on the camera position
+    int range = 5;
 
-    glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
-    glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
-    glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
-    glUniformMatrix4fv(lightSpaceMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+    for (int x = -range; x <= range; ++x) {
+        for (int z = -range; z <= range; ++z) {
+            // Calculate the position of the current tile
+            float tileX = floor(cameraPosition.x / tileSize) * tileSize + x * tileSize;
+            float tileZ = floor(cameraPosition.z / tileSize) * tileSize + z * tileSize;
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glUniform1i(shadowMapID, 1);
+            modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(tileX, 0.0f, tileZ));
+            mvp = cameraMatrix * modelMatrix;
 
-    glUniform1i(useTextureID, GL_TRUE);
+            // Pass uniforms to the shader
+            glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+            glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+            glUniform3fv(glGetUniformLocation(programID, "cameraPosition"), 1, &cameraPosition[0]);
+            glUniform1f(glGetUniformLocation(programID, "tileScale"), 0.1f);
 
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
+            glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
+            glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
+            glUniformMatrix4fv(lightSpaceMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 
-    glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, depthMap);
+            glUniform1i(shadowMapID, 1);
 
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+            glUniform1i(useTextureID, GL_TRUE);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glUniform1i(textureSamplerID, 0);
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            glEnableVertexAttribArray(3);
+            glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(2);
-    glDisableVertexAttribArray(3);
+            glEnableVertexAttribArray(2);
+            glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glUniform1i(textureSamplerID, 0);
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(2);
+            glDisableVertexAttribArray(3);
+        }
+    }
 }
+
 
 void Floor:: renderDepth(GLuint depthShaderProg, glm::mat4 lightSpaceMatrix) {
     glUseProgram(depthShaderProg);

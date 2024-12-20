@@ -30,7 +30,7 @@ public:
     GLuint lightSpaceMatrixID;
 
     void initialize(GLuint floorTexture);
-    void render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix, GLuint depthMap);
+    void render(glm::mat4 cameraMatrix,  glm::vec3 cameraPosition, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix, GLuint depthMap);
     void renderDepth(GLuint depthShaderProg, glm::mat4 lightSpaceMatrix);
     void cleanup();
 
