@@ -32,7 +32,7 @@ static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
 
 // OpenGL camera view parameters
-static glm::vec3 eye_center(0.0f, 10.0f, 0.f);
+static glm::vec3 eye_center(-0.73395, 10.0f, -341.383f);
 static glm::vec3 lookat(0, 0, 0);
 static glm::vec3 up(0, 1, 0);
 static glm:: vec3 forward;
@@ -450,15 +450,6 @@ GL_STATIC_DRAW);
 
 };
 
-
-void wrapBuildingPositions(glm::vec3 cameraPosition, float gridSize, std::vector<Building>& buildings) {
-	for (auto& building : buildings) {
-		building.position.x = fmod(building.position.x - cameraPosition.x + gridSize, gridSize);
-		building.position.z = fmod(building.position.z - cameraPosition.z + gridSize, gridSize);
-	}
-}
-
-
 void initializeShadowMap() {
 	// Create the depth framebuffer
 	glGenFramebuffers(1, &depthMapFBO);
@@ -531,35 +522,55 @@ int main(void)
 	GLuint floorTexture = LoadTextureTileBox("../lab2/cityGround.jpg");
 	floor.initialize(floorTexture);
 
-	GLuint buildingTexture = LoadTextureTileBox("../lab2/nightCity.jpg");
+
+	float floorSize = 800.0f;
+
 	//My buildings
 	int rows =7;
 	int cols = 7;
-	float spacing =65.0f;
+	float spacing = 65;
+	GLuint buildingTexture = LoadTextureTileBox("../lab2/nightCity.jpg");
+
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> height_dist(30.0f, 150.0f);
 	std::uniform_real_distribution<> offset_dist(-5.0f, 5.0f);
 	//std::uniform_int_distribution<> texture_dist(0, textures.size() - 1);
+
+	float x=0;
+	float z=0;
 	std::vector<Building> buildings;
+	float offsetX = -((cols - 1) * spacing) / 2.0f;
+	float offsetZ = -((rows - 1) * spacing) / 2.0f;
+
+	// Loop to create the 7x7 grid
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
 			Building b;
 
-			// Randomize position with slight offset
-			float x = i * spacing + offset_dist(gen);
-			float z = j * spacing + offset_dist(gen);
-			glm::vec3 position = glm::vec3(x, 0, z);
+			// Compute position of each building
+			glm::vec3 position = glm::vec3(offsetX + i * spacing, 0.0f, offsetZ + j * spacing);
 
-			// Randomize height while keeping width and depth constant
-			float height = height_dist(gen);
+			// Set a random height for variety (you can use your desired range)
+			float height = 30.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (150.0f - 30.0f)));
 			glm::vec3 scale = glm::vec3(16.0f, height, 16.0f);
-			//GLuint random_texture = textures[texture_dist(gen)];
-			position.y=height;
+
+			// Adjust position.y to account for the height
+			position.y = height / 2.0f;
+
 			b.initialize(position, scale, buildingTexture);
 			buildings.push_back(b);
+
+			// Debugging: Print building positions
+			std::cout << "Building created at position: ("
+					  << position.x << ", "
+					  << position.y << ", "
+					  << position.z << ")" << std::endl;
 		}
 	}
+
+
+
 
 	//Drone creation stemming from sphere Idea
 	Drone drone;
@@ -623,7 +634,6 @@ int main(void)
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
 	float time = 0.0f;
-	wrapBuildingPositions(eye_center, spacing * rows, buildings);
 	do
 	{
 		//For sphere movement get delta time
@@ -647,6 +657,7 @@ int main(void)
 		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
 		floor.renderDepth(depthShaderProg, lightSpaceMatrix);
+
 		for (auto& building : buildings) {
 			building.renderDepth(depthShaderProg, lightSpaceMatrix);
 		}
@@ -670,6 +681,7 @@ int main(void)
 
 		floor.render(vp, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
 
+
 		for (auto& building : buildings) {
 			building.render(vp, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
 		}
@@ -684,6 +696,17 @@ int main(void)
 		particles.render(vp);
 		//particleSystem.render(vp);
 
+		static float printTimer = 0.0f;
+		printTimer += deltaTime;
+		if (printTimer > 0.5f) {
+			std::cout << "Camera position: ("
+					  << eye_center.x << ", "
+					  << eye_center.y << ", "
+					  << eye_center.z << ")"
+					  << std::endl;
+			printTimer = 0.0f;
+		}
+
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -695,6 +718,7 @@ int main(void)
 	for (auto& building : buildings) {
 		building.cleanup();
 	}
+
 
 	floor.cleanup();
 	sign.cleanup();

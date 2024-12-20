@@ -35,10 +35,10 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 }
 
 GLfloat vertex_buffer_data[12] = {
-    -800.0f, 0.0f, -800.0f,
-    800.0f, 0.0f, -800.0f,
-    800.0f, 0.0f, 800.0f,
-    -800.0f, 0.0f, 800.0f
+    -400.0f, 0.0f, -400.0f,
+    400.0f, 0.0f, -400.0f,
+    400.0f, 0.0f, 400.0f,
+    -400.0f, 0.0f, 400.0f
 };
 
 GLfloat uv_buffer_data[8] = {
@@ -82,7 +82,7 @@ void Floor::initialize(GLuint floorTexture) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
 
-    programID = LoadShadersFromFile("../lab2/shaders/box.vert", "../lab2/shaders/box.frag");
+    programID = LoadShadersFromFile("../lab2/shaders/floorShaders/floor.vert", "../lab2/shaders/floorShaders/floor.frag");
     mvpMatrixID = glGetUniformLocation(programID, "MVP");
     textureSamplerID = glGetUniformLocation(programID, "textureSampler");
     useTextureID = glGetUniformLocation(programID, "useTexture");
