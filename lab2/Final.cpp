@@ -348,7 +348,7 @@ GL_STATIC_DRAW);
 		}
 
 		useTextureID = glGetUniformLocation(programID, "useTexture");
-		textureID = LoadTextureTileBox(("../lab2/facade4.jpg"));
+		textureID = LoadTextureTileBox(("../lab2/futureBuildings.jpg"));
 		mvpMatrixID = glGetUniformLocation(programID, "MVP");
         textureSamplerID = glGetUniformLocation(programID,"textureSampler");
 		lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
@@ -764,7 +764,8 @@ int main(void)
 	int rows =7;
 	int cols = 7;
 	float spacing = 65;
-	GLuint buildingTexture = LoadTextureTileBox("../lab2/nightCity.jpg");
+	//GLuint buildingTexture = LoadTextureTileBox("../lab2/nightCity.jpg");
+	GLuint buildText = LoadTextureTileBox("../lab2/cityGround.jpg");
 	float x=0;
 	float z=0;
 	std::vector<Building> buildings;
@@ -787,7 +788,7 @@ int main(void)
 			position.y = height;
 			position.y = height;
 
-			b.initialize(position, scale, buildingTexture);
+			b.initialize(position, scale, buildText);
 			buildings.push_back(b);
 
 			// Debugging: Print building positions

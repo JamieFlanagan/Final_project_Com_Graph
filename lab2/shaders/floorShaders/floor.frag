@@ -39,7 +39,7 @@ void main() {
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 
-    vec3 ambient = 0.2 * lightColor;
+    vec3 ambient = 0.5 * lightColor;
     vec3 diffuse = diff * lightColor;
     vec3 specular = spec * lightColor;
 
