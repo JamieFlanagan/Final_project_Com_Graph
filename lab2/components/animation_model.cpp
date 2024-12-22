@@ -10,6 +10,8 @@
 #include <tiny_gltf.h>
 #include <stb/stb_image.h>
 
+
+/*
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
     stbi_set_flip_vertically_on_load(false);
@@ -33,6 +35,40 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     stbi_image_free(img);
 
     return texture;
+}
+
+*/
+
+GLuint loadTextureFromFile(const char* filename) {
+    int width, height, channels;
+    unsigned char* data = stbi_load(filename, &width, &height, &channels, 0);
+    if (!data) {
+        std::cout << "Failed to load texture: " << filename << std::endl;
+        return 0;
+    }
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+    return textureID;
+}
+
+animationModel::animationModel() : programID(0) {}
+
+animationModel::~animationModel() {
+    cleanup();
 }
 
 glm::mat4 animationModel::getNodeTransform(const tinygltf::Node& node) {
@@ -77,30 +113,12 @@ void animationModel::computeGlobalNodeTransform(const tinygltf::Model& model,
         int nodeIndex, const glm::mat4& parentTransform,
         std::vector<glm::mat4> &globalTransforms)
 {
-
-    //For movement as the animation just stays in place
-    static glm::vec3 globalPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-
-    glm::mat4 translation = glm::translate(glm::mat4(1.0f), globalPosition);
-
-    //To correct cesium man rendering on his side
-
-    glm::mat4 correction = glm::mat4(1.0f);
-    correction = glm::rotate(correction, glm::radians(90.0f), glm::vec3(0, 1, 0)); // Rotate 90° around X-axis
-    correction = glm::scale(correction, glm::vec3(15.0f));
-
-    glm::mat4 correctedParentTransform = (parentTransform == glm::mat4(1.0f))
-        ? translation * correction * parentTransform
-        : parentTransform;
-
-    globalTransforms[nodeIndex] = correctedParentTransform * localTransforms[nodeIndex];
+    // ----------------------------------------
+    // TODO: your code here
+    globalTransforms[nodeIndex] = parentTransform * localTransforms[nodeIndex];
 
     const tinygltf::Node& node = model.nodes[nodeIndex];
-    glm::vec3 position = glm::vec3(globalTransforms[nodeIndex][3]); // Extract translation
-    /*
-    std::cout << "Node " << nodeIndex << " global position: "
-              << position.x << ", " << position.y << ", " << position.z << std::endl;
-*/
+
     // Recursively compute the global transforms for child nodes.
     for (int childIndex : node.children) {
         computeGlobalNodeTransform(model, localTransforms, childIndex, globalTransforms[nodeIndex], globalTransforms);
@@ -308,18 +326,14 @@ void animationModel::updateSkinning(const tinygltf::Skin &skin,const std::vector
 }
 
 void animationModel::update(float time) {
+
     if (model.animations.empty() || model.skins.empty()) {
         return;
     }
 
-
     // Animation and skin objects
     const tinygltf::Animation &animation = model.animations[0];
     const AnimationObject &animationObject = animationObjects[0];
-
-    float duration = animationObject.samplers[0].input.back();
-    float normalizedTime = fmod(time, duration);
-
     const tinygltf::Skin &skin = model.skins[0];
 
     // Initialize node transforms (identity for all nodes)
@@ -331,26 +345,10 @@ void animationModel::update(float time) {
     // Global transforms for all nodes
     std::vector<glm::mat4> globalTransforms(model.nodes.size(), glm::mat4(1.0f));
 
-    // Static variable to track continuous movement
-    static float totalMovement = 0.0f;
-    float movementSpeed = 0.1f; // Adjust this value to control movement speed
-    totalMovement -= movementSpeed; // Move backwards (negative z-axis)
-
-    // Create correction matrix
-    glm::mat4 correction = glm::mat4(1.0f);
-    correction = glm::rotate(correction, glm::radians(-90.0f), glm::vec3(1, 0, 0)); // Rotate 90° around X-axis
-    correction = glm::rotate(correction, glm::radians(-90.0f), glm::vec3(0, 0, 1)); // Rotate 90° around X-axis
-    correction = glm::scale(correction, glm::vec3(15.0f)); // Maintain original scale
-
-    // Create translation matrix
-    glm::mat4 movementTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -totalMovement));
-
-    // Combine movement with correction
-    glm::mat4 finalTransform = movementTransform * correction;
-
     // Compute global transforms starting from the root joint
     int rootNodeIndex = skin.joints[0];
-    computeGlobalNodeTransform(model, nodeTransforms, rootNodeIndex, finalTransform, globalTransforms);
+    glm::mat4 parentTransform = glm::mat4(1.0f); // Identity matrix for the root's parent
+    computeGlobalNodeTransform(model, nodeTransforms, rootNodeIndex, parentTransform, globalTransforms);
 
     // Update skinning joint matrices
     for (SkinObject &skinObject : skinObjects) {
@@ -384,26 +382,65 @@ bool animationModel::loadModel(tinygltf::Model &model, const char *filename) {
 }
 
 void animationModel::initialize() {
-    lightPosition = glm::vec3(-275.0f, 500.0f, 800.0f);
-    lightIntensity = glm::vec3(5e6f, 5e6f, 5e6f);
-    if (!loadModel(model, "../lab2/models/CesiumMan.gltf")) return;
+    if (!loadModel(model, "../lab2/models/alienModel/alien2.gltf")) {
+        return;
+    }
+
+    // Prepare buffers for rendering
     primitiveObjects = bindModel(model);
+
+    // Prepare joint matrices
     skinObjects = prepareSkinning(model);
+
+    // Prepare animation data
     animationObjects = prepareAnimation(model);
 
+    // Create and compile our GLSL program from the shaders
     programID = LoadShadersFromFile("../lab2/shaders/bot.vert", "../lab2/shaders/bot.frag");
-    if (programID == 0) std::cerr << "Failed to load shaders." << std::endl;
+    if (programID == 0)
+    {
+        std::cerr << "Failed to load shaders." << std::endl;
+    }
 
-    textureID = LoadTextureTileBox("../lab2/models/CesiumMan_img0.jpg");
-
-
+    // Get a handle for GLSL variables
     mvpMatrixID = glGetUniformLocation(programID, "MVP");
+    jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
     lightPositionID = glGetUniformLocation(programID, "lightPosition");
     lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
-    // Add this uniform location in initialize()
-    jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
-    //initialPosition = startPosition;
+
+    //The textures from blender
+    diffuseMapID = glGetUniformLocation(programID, "diffuseMap");
+    emissiveMapID = glGetUniformLocation(programID, "emissiveMap");
+    glossinessMapID = glGetUniformLocation(programID, "glossinessMap");
+    normalMapID = glGetUniformLocation(programID, "normalMap");
+    specularMapID = glGetUniformLocation(programID, "specularMap");
+    loadMaterialTextures();
 }
+
+void animationModel:: loadMaterialTextures() {
+    //Have two materials
+    materials.resize(2);
+
+    // Load textures for first material (1001)
+    materials[0].diffuseTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1001_Diffuse.png");
+    if (materials[0].diffuseTexture == 0) {
+        std::cerr << "Failed to load diffuse texture!" << std::endl;
+    }
+    materials[0].emissiveTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1001_Emissive.png");
+    materials[0].glossinessTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1001_Glossiness.png");
+    materials[0].normalTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1001_Normal.png");
+    materials[0].specularTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1001_Specular.png");
+
+    // Load textures for second material (1002)
+    materials[1].diffuseTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1002_Diffuse.png");
+    materials[1].emissiveTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1002_Emissive.png");
+    materials[1].glossinessTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1002_Glossiness.png");
+    materials[1].normalTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1002_Normal.png");
+    materials[1].specularTexture = loadTextureFromFile("../lab2/models/alienModel/CH44_1002_Specular.png");
+}
+
+
+
 
 void animationModel::bindMesh(std::vector<PrimitiveObject> &primitiveObjects,
               tinygltf::Model &model, tinygltf::Mesh &mesh) {
@@ -568,6 +605,9 @@ void animationModel::render(glm::mat4 cameraMatrix) {
     glm::mat4 mvp = cameraMatrix;
     glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
+    float scaleFactor = 0.1f;
+    glUniform1f(glGetUniformLocation(programID, "scaleFactor"), scaleFactor);
+
     if (!skinObjects.empty()) {
         // Ensure we don't exceed the maximum number of joints in the shader
         size_t numJoints = std::min(skinObjects[0].jointMatrices.size(), size_t(99));
@@ -575,14 +615,34 @@ void animationModel::render(glm::mat4 cameraMatrix) {
                            glm::value_ptr(skinObjects[0].jointMatrices[0]));
     }
 
+    // Bind textures
+    // Diffuse texture in texture unit 0
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, materials[0].diffuseTexture);
+    glUniform1i(diffuseMapID, 0);
 
+    // Emissive texture in texture unit 1
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, materials[0].emissiveTexture);
+    glUniform1i(emissiveMapID, 1);
+
+    // Glossiness texture in texture unit 2
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, materials[0].glossinessTexture);
+    glUniform1i(glossinessMapID, 2);
+
+    // Normal texture in texture unit 3
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, materials[0].normalTexture);
+    glUniform1i(normalMapID, 3);
+
+    // Specular texture in texture unit 4
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, materials[0].specularTexture);
+    glUniform1i(specularMapID, 4);
     // Set light data
     glUniform3fv(lightPositionID, 1, &lightPosition[0]);
     glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glUniform1i(glGetUniformLocation(programID, "textureSampler"), 0);
 
     // Draw the GLTF model
     drawModel(primitiveObjects, model);

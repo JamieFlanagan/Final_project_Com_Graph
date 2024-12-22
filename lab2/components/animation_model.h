@@ -18,8 +18,20 @@
 #include <string>
 #include "render/shader.h"
 
+struct MaterialTextures {
+    GLuint diffuseTexture;
+    GLuint emissiveTexture;
+    GLuint glossinessTexture;
+    GLuint normalTexture;
+    GLuint specularTexture;
+};
+
 class animationModel {
 public:
+
+    animationModel();
+    ~animationModel();
+
     GLuint mvpMatrixID;
     GLuint jointMatricesID;
     GLuint lightPositionID;
@@ -72,6 +84,7 @@ public:
     void drawModelNodes(const std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model, tinygltf::Node& node);
     void drawModel(const std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model);
     void render(glm::mat4 cameraMatrix);
+    void loadMaterialTextures();
     void cleanup();
 
 private:
@@ -79,6 +92,13 @@ private:
     std::vector<PrimitiveObject> primitiveObjects;
     std::vector<SkinObject> skinObjects;
     std::vector<AnimationObject> animationObjects;
+    GLuint diffuseMapID;
+    GLuint emissiveMapID;
+    GLuint glossinessMapID;
+    GLuint normalMapID;
+    GLuint specularMapID;
+    std::vector<MaterialTextures> materials;
+
 
 };
 
