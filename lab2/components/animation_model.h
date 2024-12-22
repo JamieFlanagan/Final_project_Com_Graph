@@ -40,7 +40,7 @@ public:
     GLuint programID;
     glm::vec3 lightPosition;  // Position of the light source
     glm::vec3 lightIntensity;
-    //glm::vec3 initialPosition;
+    glm::vec3 spawnPosition;
 
     tinygltf::Model model;
 
@@ -76,7 +76,7 @@ public:
     void updateSkinning(const tinygltf::Skin& skin, const std::vector<glm::mat4>& nodeTransforms);
     void update(float time);
     bool loadModel(tinygltf::Model& model, const char* filename);
-    void initialize();
+    void initialize(glm::vec3 position);
     void bindMesh(std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model, tinygltf::Mesh& mesh);
     void bindModelNodes(std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model, tinygltf::Node& node);
     std::vector<PrimitiveObject> bindModel(tinygltf::Model& model);

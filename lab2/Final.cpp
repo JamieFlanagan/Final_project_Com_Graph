@@ -840,7 +840,9 @@ int main(void)
 
 
 	animationModel bot;
-	bot.initialize();
+	bot.initialize(glm::vec3(-0.73395, 0.0f, -341.383f));
+	animationModel bot2;
+	bot2.initialize(glm::vec3(7.73395, 0.0f, -341.383f));
 
 	//Welcome Sign
 	WelcomeSign sign;
@@ -885,6 +887,7 @@ int main(void)
 
 		//character update
 		bot.update(time);
+		bot2.update(time);
 		particles.update(deltaTime);
 		updateHoverCars(hoverCars, deltaTime, tallestBuildingHeight);
 		//particleSystem.update(deltaTime);
@@ -927,6 +930,7 @@ int main(void)
 			building.render(vp, lightPosition, lightColor, eye_center, lightSpaceMatrix, depthMap);
 		}
 		bot.render(vp);
+		bot2.render(vp);
 		//Have this in to debug the cylinder drone but it doesnt work
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		drone.render(vp, lightPos, lightColor, eye_center, depthMap, lightSpaceMatrix);
@@ -974,6 +978,7 @@ int main(void)
 	sign.cleanup();
 	skybox.cleanup();
 	bot.cleanup();
+	bot2.cleanup();
 	particles.cleanup();
 	//particleSystem.cleanup();
 

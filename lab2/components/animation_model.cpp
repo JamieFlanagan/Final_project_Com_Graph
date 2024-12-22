@@ -178,27 +178,20 @@ std::vector<animationModel::SkinObject> animationModel::prepareSkinning(const ti
 		return skinObjects;
 	}
 
-int animationModel::findKeyframeIndex(const std::vector<float>& times, float animationTime)
-{
-    int left = 0;
-    int right = times.size() - 1;
+int animationModel::findKeyframeIndex(const std::vector<float>& times, float animationTime) {
+    // Find the first element that is greater than animationTime
+    auto it = std::lower_bound(times.begin(), times.end(), animationTime);
 
-    while (left <= right) {
-        int mid = (left + right) / 2;
-
-        if (mid + 1 < times.size() && times[mid] <= animationTime && animationTime < times[mid + 1]) {
-            return mid;
-        }
-        else if (times[mid] > animationTime) {
-            right = mid - 1;
-        }
-        else { // animationTime >= times[mid + 1]
-            left = mid + 1;
-        }
+    // Handle edge cases
+    if (it == times.end()) {
+        return times.size() - 2; // Wrap around to the last valid keyframe
+    }
+    if (it == times.begin()) {
+        return 0; // If animationTime is before the first keyframe
     }
 
-    // Target not found
-    return times.size() - 2;
+    // Return the index of the previous element
+    return std::distance(times.begin(), it) - 1;
 }
 
 std::vector<animationModel::AnimationObject> animationModel::prepareAnimation(const tinygltf::Model &model)
@@ -381,7 +374,8 @@ bool animationModel::loadModel(tinygltf::Model &model, const char *filename) {
     return res;
 }
 
-void animationModel::initialize() {
+void animationModel::initialize(glm::vec3 position) {
+    this->spawnPosition=position;
     if (!loadModel(model, "../lab2/models/alienModel/alien2.gltf")) {
         return;
     }
@@ -600,9 +594,9 @@ void animationModel::drawModel(const std::vector<PrimitiveObject>& primitiveObje
 
 void animationModel::render(glm::mat4 cameraMatrix) {
     glUseProgram(programID);
-
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), spawnPosition); // translation with spawn
     // Set camera
-    glm::mat4 mvp = cameraMatrix;
+    glm::mat4 mvp = cameraMatrix*modelMatrix;
     glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
     float scaleFactor = 0.1f;
