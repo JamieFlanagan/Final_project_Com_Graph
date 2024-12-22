@@ -288,6 +288,7 @@ void animationModel::updateAnimation(
             memcpy(&translation0, &samplerOutput[keyframeIndex], sizeof(glm::vec3));
             memcpy(&translation1, &samplerOutput[nextKeyframeIndex], sizeof(glm::vec3));
             glm::vec3 translation = glm::mix(translation0, translation1, factor);
+
             nodeTransforms[targetNodeIndex] = glm::translate(nodeTransforms[targetNodeIndex], translation);
         }
         else if (channel.target_path == "rotation") {
@@ -343,6 +344,12 @@ void animationModel::update(float time) {
     glm::mat4 parentTransform = glm::mat4(1.0f); // Identity matrix for the root's parent
     computeGlobalNodeTransform(model, nodeTransforms, rootNodeIndex, parentTransform, globalTransforms);
 
+    // Apply the spawn position to all global transforms
+    glm::mat4 globalTransformWithSpawn = glm::translate(glm::mat4(1.0f), spawnPosition);
+    for (size_t i = 0; i < globalTransforms.size(); ++i) {
+        globalTransforms[i] = globalTransformWithSpawn * globalTransforms[i];
+    }
+
     // Update skinning joint matrices
     for (SkinObject &skinObject : skinObjects) {
         for (size_t i = 0; i < skin.joints.size(); ++i) {
@@ -376,7 +383,12 @@ bool animationModel::loadModel(tinygltf::Model &model, const char *filename) {
 
 void animationModel::initialize(glm::vec3 position) {
     this->spawnPosition=position;
-    if (!loadModel(model, "../lab2/models/alienModel/alien2.gltf")) {
+    currentWaypointIndex=0;
+    movementSpeed=1.0f;
+    targetPosition=glm::vec3(0.0f);
+    rotationMatrix=glm::mat4(1.0f); // No rotation/ identity matrix
+
+    if (!loadModel(model, "../lab2/models/stationaryAlien/alienStationary.gltf")) {
         return;
     }
 
@@ -594,7 +606,8 @@ void animationModel::drawModel(const std::vector<PrimitiveObject>& primitiveObje
 
 void animationModel::render(glm::mat4 cameraMatrix) {
     glUseProgram(programID);
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), spawnPosition); // translation with spawn
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), spawnPosition) * rotationMatrix; // translation with spawn and rotate
+
     // Set camera
     glm::mat4 mvp = cameraMatrix*modelMatrix;
     glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
@@ -641,6 +654,51 @@ void animationModel::render(glm::mat4 cameraMatrix) {
     // Draw the GLTF model
     drawModel(primitiveObjects, model);
 }
+
+//function to make my models move to the way points
+void animationModel::moveToTarget(float deltaTime,
+    const std::function<bool(const glm::vec3&)>& isSafeFn,
+    const std::vector<glm::vec3>& wayPoints) {
+
+    // Calculate direction vector to current target waypoint
+    glm::vec3 direction = targetPosition - spawnPosition;
+    float distance = glm::length(direction);
+
+    // Check if we're close enough to current waypoint to switch to next one
+    if (distance < 0.5f) { // Threshold for reaching waypoint
+        currentWaypointIndex = (currentWaypointIndex + 1) % wayPoints.size();
+        targetPosition = wayPoints[currentWaypointIndex];
+        direction = targetPosition - spawnPosition;// New direction to face
+    }
+
+    // Only move if we're not already at target
+    if (distance > 0.1f) {
+        // Normalize direction vector
+        direction = glm::normalize(direction);
+
+        // Calculate new position
+        glm::vec3 newPosition = spawnPosition + direction * movementSpeed * deltaTime;
+
+        // Update position
+        spawnPosition = newPosition;
+
+        // Calculate rotation to face movement direction
+        float targetAngle = atan2(direction.x, direction.z);
+
+        float currentAngle = atan2(rotationMatrix[0][2], rotationMatrix[2][2]);
+
+        float angleDifference = targetAngle-currentAngle;
+        if(angleDifference>glm::pi<float>()) {
+            angleDifference -= 2.0f * glm::pi<float>();
+        }else if (angleDifference < -glm::pi<float>()) {
+            angleDifference += 2.0f * glm::pi<float>();
+        }
+        //Interpolate the rotation
+        float interpolatedAngle = currentAngle + angleDifference * 0.5f;
+        rotationMatrix = glm::rotate(glm::mat4(1.0f), interpolatedAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+}
+
 void animationModel::cleanup() {
     glDeleteProgram(programID);
 }

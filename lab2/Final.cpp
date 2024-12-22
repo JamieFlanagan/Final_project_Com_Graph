@@ -60,6 +60,13 @@ glm::vec3 lightColor(1.0f, 1.0f, 1.0f);       // White light
 glm::vec3 viewPosition;
 static glm::vec3 lightLookAt(0.0f, 0.0f, 0.0f);
 
+std::vector<glm::vec3> wayPoints ={
+	glm::vec3(-32.3512f, 0.0f, -225.799f),
+	glm::vec3(165.144f, 0.0f, -224.496f),
+	glm::vec3(31.3613f, 0.0f, -30.3742f),
+	glm::vec3(-91.977f, 0.0f, 96.3127f)
+};
+
 
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
@@ -452,6 +459,17 @@ GL_STATIC_DRAW);
 
 };
 
+//Collision detection for the models
+bool isSafe(const glm::vec3& position, const std::vector<Building>& buildings) {
+	for (const auto& building : buildings) {
+		float buildingRadius = 5.0f;
+		if (glm::distance(position, building.position) < buildingRadius) {
+			return false;  // Too close to a building
+		}
+	}
+	return true;
+}
+
 void initializeShadowMap() {
 	// Create the depth framebuffer
 	glGenFramebuffers(1, &depthMapFBO);
@@ -819,15 +837,6 @@ int main(void)
 		hoverCars.push_back(car);
 	}
 
-	//My Sphere ----------------
-	// TBE drones
-/*
-	Sphere sphere;
-	glm::vec3 spherePosition = glm::vec3(100.0f, 300.0f, 60.0f);  // Position in the air
-	float sphereRadius = 25.0f;                               // Sphere radius
-	sphere.initialize(spherePosition,sphereRadius, 36, 18, 0);
-
-*/
 	//sphere movement
 	float lastFrame =0.0f;
 	float currentFrame;
@@ -841,6 +850,10 @@ int main(void)
 
 	animationModel bot;
 	bot.initialize(glm::vec3(-0.73395, 0.0f, -341.383f));
+	bot.targetPosition=wayPoints[0];
+	bot.currentWaypointIndex=0;
+	bot.movementSpeed = 10.0f;
+
 	animationModel bot2;
 	bot2.initialize(glm::vec3(7.73395, 0.0f, -341.383f));
 
@@ -880,13 +893,25 @@ int main(void)
 	float time = 0.0f;
 	do
 	{
+		float animationTime = 0.0f;
+		const float animSpeed = 1.0f;
 		//For sphere movement get delta time
 		float currentTime = glfwGetTime();
 		float deltaTime = currentTime - time;
 		time = currentTime;
 
+		//move bots
+		bot.moveToTarget(deltaTime, [&](const glm::vec3& position) {
+	return true; // No collision check for now
+}, wayPoints);
+
+		float animationDuration = bot.animationObjects[0].samplers[0].input.back();
+		animationTime = fmod(animationTime + (deltaTime * animSpeed), animationDuration);
+
 		//character update
 		bot.update(time);
+
+
 		bot2.update(time);
 		particles.update(deltaTime);
 		updateHoverCars(hoverCars, deltaTime, tallestBuildingHeight);

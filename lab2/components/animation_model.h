@@ -41,6 +41,13 @@ public:
     glm::vec3 lightPosition;  // Position of the light source
     glm::vec3 lightIntensity;
     glm::vec3 spawnPosition;
+    glm::mat4 rotationMatrix; //Keep track of the orientation
+
+    //For movement
+    glm::vec3 targetPosition;
+    size_t currentWaypointIndex;
+    float movementSpeed;
+
 
     tinygltf::Model model;
 
@@ -64,7 +71,7 @@ public:
     struct AnimationObject {
         std::vector<SamplerObject> samplers;
     };
-
+    std::vector<AnimationObject> animationObjects;
 
     glm::mat4 getNodeTransform(const tinygltf::Node& node);
     void computeLocalNodeTransform(const tinygltf::Model& model, int nodeIndex, std::vector<glm::mat4>& localTransforms);
@@ -85,13 +92,15 @@ public:
     void drawModel(const std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model);
     void render(glm::mat4 cameraMatrix);
     void loadMaterialTextures();
+    void moveToTarget(float deltaTime,
+    const std::function<bool(const glm::vec3&)>& isSafeFn,
+    const std::vector<glm::vec3>& wayPoints);
     void cleanup();
 
 private:
 
     std::vector<PrimitiveObject> primitiveObjects;
     std::vector<SkinObject> skinObjects;
-    std::vector<AnimationObject> animationObjects;
     GLuint diffuseMapID;
     GLuint emissiveMapID;
     GLuint glossinessMapID;
