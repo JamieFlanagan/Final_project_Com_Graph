@@ -22,7 +22,6 @@
 #include "components/animation_model.h"
 #include "components/WelcomeSign/WelcomeSign.h"
 
-
 #include <tiny_gltf.h>
 
 #include "components/CoolerParticles/movingParticles.h"
@@ -61,10 +60,16 @@ glm::vec3 viewPosition;
 static glm::vec3 lightLookAt(0.0f, 0.0f, 0.0f);
 
 std::vector<glm::vec3> wayPoints ={
-	glm::vec3(-32.3512f, 0.0f, -225.799f),
-	glm::vec3(165.144f, 0.0f, -224.496f),
-	glm::vec3(31.3613f, 0.0f, -30.3742f),
-	glm::vec3(-91.977f, 0.0f, 96.3127f)
+	glm::vec3(98.076f, 0.0f, -160.728f),
+	glm::vec3(96.36f, 0.0f, 99.2665f),
+	glm::vec3(-96.1358f, 0.0f, 97.9782f),
+	glm::vec3(-96.8901f, 0.0f, -162.033f)
+};
+std::vector<glm::vec3> wayPointsBot2 ={
+	glm::vec3(33.0999, 0, -161.157),
+	glm::vec3(33.0999, 0, -33.657),
+	glm::vec3(-94.4001, 0, -33.657),
+	glm::vec3(-94.4001, 0.0, -161.157)
 };
 
 
@@ -113,6 +118,7 @@ static void saveDepthTexture(GLuint fbo, std::string filename) {
 	stbi_write_png(filename.c_str(), width, height, channels, img.data(), width * channels);
 }
 
+/*
 struct Building {
 	glm::vec3 position;		// Position of the box
 	glm::vec3 scale;		// Size of the box in each axis
@@ -458,6 +464,7 @@ GL_STATIC_DRAW);
 
 
 };
+*/
 
 //Collision detection for the models
 bool isSafe(const glm::vec3& position, const std::vector<Building>& buildings) {
@@ -469,6 +476,8 @@ bool isSafe(const glm::vec3& position, const std::vector<Building>& buildings) {
 	}
 	return true;
 }
+
+
 
 void initializeShadowMap() {
 	// Create the depth framebuffer
@@ -703,7 +712,6 @@ struct HoverCar{
 };
 
 //Make the cubes move
-//Make the cubes move
 void updateHoverCars(std::vector<HoverCar>& hoverCars, float deltaTime, float tallestBuildingHeight) {
 
 	//Base variables so they dont overlap
@@ -823,7 +831,6 @@ int main(void)
 	drone.initialize(glm::vec3(100.0f, 300.0f, 60.0f), guinessTexture);
 
 
-
 	GLuint carTexture = LoadTextureTileBox("../lab2/hoverCar2.jpg");
 	//Hover car
 	float tallestBuildingHeight=350.0f;
@@ -849,13 +856,18 @@ int main(void)
 
 
 	animationModel bot;
-	bot.initialize(glm::vec3(-0.73395, 0.0f, -341.383f));
+	bot.initialize(glm::vec3(52.176f, 0.0f, -323.899f));
 	bot.targetPosition=wayPoints[0];
 	bot.currentWaypointIndex=0;
 	bot.movementSpeed = 10.0f;
+	bot.wayPoints=wayPoints;
 
 	animationModel bot2;
-	bot2.initialize(glm::vec3(7.73395, 0.0f, -341.383f));
+	bot2.initialize(glm::vec3(-161.986f, 0.0f, -170.522f));
+	bot2.targetPosition=wayPointsBot2[0];
+	bot2.currentWaypointIndex=0;
+	bot2.movementSpeed = 10.0f;
+	bot2.wayPoints=wayPointsBot2;
 
 	//Welcome Sign
 	WelcomeSign sign;
@@ -901,12 +913,13 @@ int main(void)
 		time = currentTime;
 
 		//move bots
-		bot.moveToTarget(deltaTime, [&](const glm::vec3& position) {
-	return true; // No collision check for now
-}, wayPoints);
+		bot.moveToTarget(deltaTime);
+		bot2.moveToTarget(deltaTime);
 
+		/*
 		float animationDuration = bot.animationObjects[0].samplers[0].input.back();
 		animationTime = fmod(animationTime + (deltaTime * animSpeed), animationDuration);
+		*/
 
 		//character update
 		bot.update(time);
@@ -973,7 +986,9 @@ int main(void)
 		//particleSystem.render(vp);
 
 
+
 		//Debug the camera posititon so I can exactly choose where I want certain elements
+
 		static float printTimer = 0.0f;
 		printTimer += deltaTime;
 		if (printTimer > 0.5f) {
@@ -984,6 +999,7 @@ int main(void)
 					  << std::endl;
 			printTimer = 0.0f;
 		}
+
 
 		// Swap buffers
 		glfwSwapBuffers(window);

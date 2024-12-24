@@ -12,6 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <tiny_gltf.h>
+#include "components/Building.h"
+
 
 #include <vector>
 #include <map>
@@ -25,6 +27,8 @@ struct MaterialTextures {
     GLuint normalTexture;
     GLuint specularTexture;
 };
+
+
 
 class animationModel {
 public:
@@ -41,12 +45,13 @@ public:
     glm::vec3 lightPosition;  // Position of the light source
     glm::vec3 lightIntensity;
     glm::vec3 spawnPosition;
-    glm::mat4 rotationMatrix; //Keep track of the orientation
+    glm::mat4 rotationMatrix;
 
     //For movement
     glm::vec3 targetPosition;
     size_t currentWaypointIndex;
     float movementSpeed;
+    std::vector<glm::vec3> wayPoints;
 
 
     tinygltf::Model model;
@@ -92,9 +97,8 @@ public:
     void drawModel(const std::vector<PrimitiveObject>& primitiveObjects, tinygltf::Model& model);
     void render(glm::mat4 cameraMatrix);
     void loadMaterialTextures();
-    void moveToTarget(float deltaTime,
-    const std::function<bool(const glm::vec3&)>& isSafeFn,
-    const std::vector<glm::vec3>& wayPoints);
+    void moveToTarget(float deltaTime);
+
     void cleanup();
 
 private:

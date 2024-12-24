@@ -1,7 +1,7 @@
 //
 // Created by JAMIE on 13/12/2024.
 //
-/*
+
 #include "components/Building.h"
 #include <render/shader.h>
 #include <stb/stb_image.h>
@@ -36,82 +36,80 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 }
 
 GLfloat building_vertex_buffer_data[72] = {	// Vertex definition for a canonical box
-		// Front face
-		-1.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
+	// Front face
+	-1.0f, -1.0f, 1.0f,
+	1.0f, -1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	-1.0f, 1.0f, 1.0f,
 
-		// Back face
+	// Back face
+	1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, 1.0f, -1.0f,
+	1.0f, 1.0f, -1.0f,
 
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
-		1.0f, 1.0f, -1.0f,
+	// Left face
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, 1.0f,
+	-1.0f, 1.0f, 1.0f,
+	-1.0f, 1.0f, -1.0f,
 
+	// Right face
+	1.0f, -1.0f, 1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, 1.0f, -1.0f,
+	1.0f, 1.0f, 1.0f,
 
-		// Left face
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, -1.0f,
+	// Top face
+	-1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, -1.0f,
+	-1.0f, 1.0f, -1.0f,
 
-		// Right face
-		1.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, 1.0f, -1.0f,
-		1.0f, 1.0f, 1.0f,
+	// Bottom face
+	-1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, 1.0f,
+	-1.0f, -1.0f, 1.0f,
+};
 
-		// Top face
-		-1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
+GLfloat building_color_buffer_data[72] = {
+	// Front, red
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
 
-		// Bottom face
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, 1.0f,
-		-1.0f, -1.0f, 1.0f,
-	};
+	// Back, yellow
+	1.0f, 1.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
 
-	GLfloat building_color_buffer_data[72] = {
-		// Front, red
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
+	// Left, green
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
 
-		// Back, yellow
-		1.0f, 1.0f, 0.0f,
-		1.0f, 1.0f, 0.0f,
-		1.0f, 1.0f, 0.0f,
-		1.0f, 1.0f, 0.0f,
+	// Right, cyan
+	0.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f,
 
-		// Left, green
-		0.0f, 1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
+	// Top, blue
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
 
-		// Right, cyan
-		0.0f, 1.0f, 1.0f,
-		0.0f, 1.0f, 1.0f,
-		0.0f, 1.0f, 1.0f,
-		0.0f, 1.0f, 1.0f,
-
-		// Top, blue
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-
-		// Bottom, magenta
-		1.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 1.0f,
-	};
+	// Bottom, magenta
+	1.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 1.0f,
+};
 
 	GLuint building_index_buffer_data[36] = {		// 12 triangle faces of a box
 		0, 1, 2,
@@ -133,46 +131,47 @@ GLfloat building_vertex_buffer_data[72] = {	// Vertex definition for a canonical
 		20, 22, 23,
 	};
 
+
     // TODO: Define UV buffer data
     // ---------------------------
     // ---------------------------
-	GLfloat building_uv_buffer_data[48]={
+GLfloat building_uv_buffer_data[48]={
 	//Front
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
 
-		// Back
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
+	// Back
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
 
-		//Left
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
+	//Left
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
 
-		//Right
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f,
+	//Right
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
 
-		// Top - we do not want texture the top
-		0.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 0.0f,
- // Bottom - we do not want texture the bottom
-		0.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 0.0f,
+	// Top - we do not want texture the top
+	0.0f, 0.0f,
+	0.0f, 0.0f,
+	0.0f, 0.0f,
+	0.0f, 0.0f,
+// Bottom - we do not want texture the bottom
+	0.0f, 0.0f,
+	0.0f, 0.0f,
+	0.0f, 0.0f,
+	0.0f, 0.0f,
 
-	};
+};
 
 	//Normals for lighting
 	GLfloat building_normal_buffer_data[72] = {
@@ -213,64 +212,61 @@ GLfloat building_vertex_buffer_data[72] = {	// Vertex definition for a canonical
 		0.0f, -1.0f, 0.0f,
 	};
 
-void Building::initialize(glm::vec3 position, glm::vec3 scale, GLuint textureID) {
-    // Define scale of the building geometry
-    this->position = position;
-    this->scale = scale;
-    this->textureID = textureID;
+void Building::initialize(glm::vec3 position, glm::vec3 scale, GLuint TextureID) {
+		// Define scale of the building geometry
+		this->position = position;
+		this->scale = scale;
+		this->textureID = TextureID;
 
-    // Create a vertex array object
-    glGenVertexArrays(1, &vertexArrayID);
-    glBindVertexArray(vertexArrayID);
+		// Create a vertex array object
+		glGenVertexArrays(1, &vertexArrayID);
+		glBindVertexArray(vertexArrayID);
 
-    // Create a vertex buffer object to store the vertex data
-    glGenBuffers(1, &vertexBufferID);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(building_vertex_buffer_data), building_vertex_buffer_data, GL_STATIC_DRAW);
+		// Create a vertex buffer object to store the vertex data
+		glGenBuffers(1, &vertexBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(building_vertex_buffer_data), building_vertex_buffer_data, GL_STATIC_DRAW);
 
-    // Create a vertex buffer object to store the color data
-    glGenBuffers(1, &colorBufferID);
-    glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(building_color_buffer_data), building_color_buffer_data, GL_STATIC_DRAW);
+		// Create a vertex buffer object to store the color data
+        // TODO:
+		glGenBuffers(1, &colorBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(building_color_buffer_data), building_color_buffer_data, GL_STATIC_DRAW);
 
-    // Modify UV data to scale the V-coordinate for tiling
+		GLfloat local_uv_buffer_data[48];
+		std::copy(std::begin(building_uv_buffer_data), std::end(building_uv_buffer_data), std::begin(local_uv_buffer_data));
+		for (int i = 0; i < 24; ++i) local_uv_buffer_data[2 * i + 1] *= 5;
 
-	GLfloat local_uv_buffer_data[48];
-	std::copy(std::begin(building_uv_buffer_data), std::end(building_uv_buffer_data), std::begin(local_uv_buffer_data));
-	for (int i = 0; i < 24; ++i) local_uv_buffer_data[2 * i + 1] *= 5;
+		glGenBuffers(1, &uvBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(local_uv_buffer_data), local_uv_buffer_data,
+GL_STATIC_DRAW);
+
+		// Create an index buffer object to store the index data that defines triangle faces
+		glGenBuffers(1, &indexBufferID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(building_index_buffer_data), building_index_buffer_data, GL_STATIC_DRAW);
+
+		glGenBuffers(1, &normalBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(building_normal_buffer_data), building_normal_buffer_data, GL_STATIC_DRAW);
 
 
-    glGenBuffers(1, &uvBufferID);
-    glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(local_uv_buffer_data), local_uv_buffer_data, GL_STATIC_DRAW);
+		// Create and compile our GLSL program from the shaders
+		programID = LoadShadersFromFile("../lab2/shaders/box.vert", "../lab2/shaders/box.frag");
+		if (programID == 0)
+		{
+			std::cerr << "Failed to load shaders." << std::endl;
+		}
 
-    glGenBuffers(1, &normalBufferID);
-    glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(building_normal_buffer_data), building_normal_buffer_data, GL_STATIC_DRAW);
-
-    // Create an index buffer object to store the index data that defines triangle faces
-    glGenBuffers(1, &indexBufferID);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(building_index_buffer_data), building_index_buffer_data, GL_STATIC_DRAW);
-
-    // Create and compile our GLSL program from the shaders
-    programID = LoadShadersFromFile("../lab2/shaders/box.vert", "../lab2/shaders/box.frag");
-    if (programID == 0)
-    {
-        std::cerr << "Failed to load shaders." << std::endl;
-    }
-
-    // Get a handle for our "MVP" uniform
-    mvpMatrixID = glGetUniformLocation(programID, "MVP");
-    useTextureID = glGetUniformLocation(programID, "useTexture");
-    // Use the passed-in texture
-    textureSamplerID = glGetUniformLocation(programID, "textureSampler");
-	modelMatrixID = glGetUniformLocation(programID, "model");
-	lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
-	shadowMapID = glGetUniformLocation(programID, "shadowMap");
-}
-
-void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, GLuint shadowMap, const glm::mat4& lightSpaceMatrix) {
+		useTextureID = glGetUniformLocation(programID, "useTexture");
+		textureID = LoadTextureTileBox(("../lab2/futureBuildings.jpg"));
+		mvpMatrixID = glGetUniformLocation(programID, "MVP");
+        textureSamplerID = glGetUniformLocation(programID,"textureSampler");
+		lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
+		shadowMapID = glGetUniformLocation(programID, "shadowMap");
+	}
+void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lightColor, glm::vec3 viewPos, glm::mat4 lightSpaceMatrix, GLuint depthMap) {
 		glUseProgram(programID);
 
 		// Set the MVP matrix
@@ -278,6 +274,26 @@ void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lig
 		modelMatrix = glm::scale(modelMatrix, scale);
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 
+		//Uniforms:
+		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+		// Pass lighting uniforms
+		glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
+		glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
+		// Pass the view (camera) position
+		glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
+		glUniformMatrix4fv(lightSpaceMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+		// Bind the depth map to texture unit 1
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glUniform1i(shadowMapID, 1);
+
+
+		// Set useTexture to true for buildings
+		glUniform1i(useTextureID, GL_TRUE);
+
+		// Enable vertex attributes
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -293,27 +309,6 @@ void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lig
 		glEnableVertexAttribArray(3);  // Assuming location 3 is for normals
 		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-		//Uniforms:
-		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
-		glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
-		// Pass lighting uniforms
-		glUniform3fv(glGetUniformLocation(programID, "lightPos"), 1, &lightPos[0]);
-		glUniform3fv(glGetUniformLocation(programID, "lightColor"), 1, &lightColor[0]);
-		// Pass the view (camera) position
-		glUniform3fv(glGetUniformLocation(programID, "viewPos"), 1, &viewPos[0]);
-
-		// Shadow Map uniforms
-		glUniformMatrix4fv(glGetUniformLocation(programID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
-
-		//bind my shadow map:
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, shadowMap);
-		glUniform1i(glGetUniformLocation(programID, "shadowMap"), 1);
-
-		// Set useTexture to true for buildings
-		glUniform1i(useTextureID, GL_TRUE);
-
 
 		// Bind texture
 		glActiveTexture(GL_TEXTURE0);
@@ -331,27 +326,25 @@ void Building:: render(glm::mat4 cameraMatrix, glm::vec3 lightPos, glm::vec3 lig
 		glDisableVertexAttribArray(3);
 	}
 
-void Building::renderDepth(const glm::mat4& lightSpaceMatrix, GLuint depthShaderProg) {
-	glUseProgram(depthShaderProg);
 
-	glUniformMatrix4fv(glGetUniformLocation(depthShaderProg, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+void Building::renderDepth(GLuint shaderProgramID, glm::mat4 lightSpaceMatrix) {
+	glUseProgram(shaderProgramID);
 
-	// Calculate model matrix
 	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), position);
 	modelMatrix = glm::scale(modelMatrix, scale);
 
-	// Pass matrices to shader
-	glUniformMatrix4fv(glGetUniformLocation(depthShaderProg, "modelMatrix"), 1, GL_FALSE, &modelMatrix[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "lightSpaceMatrix"), 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
 
-	// Bind vertex buffer and draw
 	glBindVertexArray(vertexArrayID);
+
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	// Draw using indices
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
 
 	glDisableVertexAttribArray(0);
 }
@@ -365,5 +358,5 @@ void Building::cleanup() {
 	//glDeleteTextures(1, &textureID);
 	glDeleteProgram(programID);
 }
-*/
+
 

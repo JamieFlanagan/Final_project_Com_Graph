@@ -9,6 +9,7 @@
 #define BUFFER_OFFSET(offset) ((char*)nullptr + (offset))
 #include <tiny_gltf.h>
 #include <stb/stb_image.h>
+#include "components/Building.h"
 
 
 /*
@@ -383,10 +384,12 @@ bool animationModel::loadModel(tinygltf::Model &model, const char *filename) {
 
 void animationModel::initialize(glm::vec3 position) {
     this->spawnPosition=position;
-    currentWaypointIndex=0;
-    movementSpeed=1.0f;
+    this->currentWaypointIndex=0;
+    this->movementSpeed=1.0f;
     targetPosition=glm::vec3(0.0f);
     rotationMatrix=glm::mat4(1.0f); // No rotation/ identity matrix
+    std::vector<glm::vec3> wayPoints;
+
 
     if (!loadModel(model, "../lab2/models/stationaryAlien/alienStationary.gltf")) {
         return;
@@ -655,49 +658,34 @@ void animationModel::render(glm::mat4 cameraMatrix) {
     drawModel(primitiveObjects, model);
 }
 
+
 //function to make my models move to the way points
-void animationModel::moveToTarget(float deltaTime,
-    const std::function<bool(const glm::vec3&)>& isSafeFn,
-    const std::vector<glm::vec3>& wayPoints) {
+void animationModel::moveToTarget(float deltaTime) {
+    if (wayPoints.empty()) return;
 
-    // Calculate direction vector to current target waypoint
-    glm::vec3 direction = targetPosition - spawnPosition;
-    float distance = glm::length(direction);
+    glm::vec3 currentTarget = wayPoints[currentWaypointIndex];
+    glm::vec3 direction = currentTarget - spawnPosition;
+    float distanceToTarget = glm::length(direction);
 
-    // Check if we're close enough to current waypoint to switch to next one
-    if (distance < 0.5f) { // Threshold for reaching waypoint
+    if (distanceToTarget < 0.1f) { // Check if close enough to the waypoint
+        spawnPosition = currentTarget; // Snap to the waypoint
         currentWaypointIndex = (currentWaypointIndex + 1) % wayPoints.size();
-        targetPosition = wayPoints[currentWaypointIndex];
-        direction = targetPosition - spawnPosition;// New direction to face
+        return;
     }
-
-    // Only move if we're not already at target
-    if (distance > 0.1f) {
-        // Normalize direction vector
-        direction = glm::normalize(direction);
-
-        // Calculate new position
-        glm::vec3 newPosition = spawnPosition + direction * movementSpeed * deltaTime;
-
-        // Update position
-        spawnPosition = newPosition;
-
-        // Calculate rotation to face movement direction
-        float targetAngle = atan2(direction.x, direction.z);
-
-        float currentAngle = atan2(rotationMatrix[0][2], rotationMatrix[2][2]);
-
-        float angleDifference = targetAngle-currentAngle;
-        if(angleDifference>glm::pi<float>()) {
-            angleDifference -= 2.0f * glm::pi<float>();
-        }else if (angleDifference < -glm::pi<float>()) {
-            angleDifference += 2.0f * glm::pi<float>();
-        }
-        //Interpolate the rotation
-        float interpolatedAngle = currentAngle + angleDifference * 0.5f;
-        rotationMatrix = glm::rotate(glm::mat4(1.0f), interpolatedAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+    direction = glm::normalize(direction);
+    glm::vec3 newPosition = spawnPosition + direction * movementSpeed * deltaTime;
+    if (glm::dot(newPosition - spawnPosition, currentTarget - spawnPosition) >= glm::dot(currentTarget - spawnPosition, currentTarget - spawnPosition)) {
+        spawnPosition = currentTarget; // Clamp to waypoint
+        currentWaypointIndex = (currentWaypointIndex + 1) % wayPoints.size();
+    } else {
+        spawnPosition = newPosition; // Update position
     }
+    // Update rotation to face movement direction
+    float targetAngle = atan2(direction.x, direction.z);
+    rotationMatrix = glm::rotate(glm::mat4(1.0f), targetAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 }
+
+
 
 void animationModel::cleanup() {
     glDeleteProgram(programID);
